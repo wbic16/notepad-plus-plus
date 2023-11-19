@@ -120,7 +120,6 @@ struct SplitView {
 	}
 };
 
-
 /**
  * Holder for an expandable array of characters that supports undo and line markers.
  * Based on article "Data Structures in a Bit-Mapped Text Editor"

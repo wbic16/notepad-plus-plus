@@ -560,6 +560,50 @@ public:
 		execute(SCI_SETWRAPVISUALFLAGS, willBeShown?SC_WRAPVISUALFLAG_END:SC_WRAPVISUALFLAG_NONE);
     };
 
+	 uint16_t getPhextData(int request) const {
+		 return static_cast<uint16_t>(execute(request));
+	 }
+
+	 bool isPhextEnabled() const {
+		 return execute(SCI_GET_PHEXT_ENABLED) != 0;
+	 }
+
+	 uint16_t getCurrentPhextScroll() const {
+		 return getPhextData(SCI_GET_PHEXT_SCROLL);
+	 }
+
+	 uint16_t getCurrentPhextSection() const {
+		 return getPhextData(SCI_GET_PHEXT_SECTION);
+	 }
+
+	 uint16_t getCurrentPhextChapter() const {
+		 return getPhextData(SCI_GET_PHEXT_CHAPTER);
+	 }
+
+	 uint16_t getCurrentPhextBook() const {
+		 return getPhextData(SCI_GET_PHEXT_BOOK);
+	 }
+
+	 uint16_t getCurrentPhextVolume() const {
+		 return getPhextData(SCI_GET_PHEXT_VOLUME);
+	 }
+
+	 uint16_t getCurrentPhextCollection() const {
+		 return getPhextData(SCI_GET_PHEXT_COLLECTION);
+	 }
+
+	 uint16_t getCurrentPhextSeries() const {
+		 return getPhextData(SCI_GET_PHEXT_SERIES);
+	 }
+
+	 uint16_t getCurrentPhextShelf() const {
+		 return getPhextData(SCI_GET_PHEXT_SHELF);
+	 }
+
+	 uint16_t getCurrentPhextLibrary() const {
+		 return getPhextData(SCI_GET_PHEXT_LIBRARY);
+	 }
+
 	intptr_t getCurrentLineNumber()const {
 		return execute(SCI_LINEFROMPOSITION, execute(SCI_GETCURRENTPOS));
 	};

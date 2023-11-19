@@ -19,6 +19,10 @@
 #include <mutex>
 #include "Utf8_16.h"
 
+// begin phext support
+#include "phext/phext_string.h"
+// end phext support
+
 
 class Notepad_plus;
 class Buffer;
@@ -120,6 +124,7 @@ private:
 		LoadedFileFormat() = default;
 		LangType _language = L_TEXT;
 		int _encoding = 0;
+		bool _phext = false;
 		EolType _eolFormat = EolType::osdefault;
 	};
 
@@ -134,6 +139,7 @@ private:
 	FileManager(FileManager&&) = delete;
 	FileManager& operator=(FileManager&&) = delete;
 
+	bool detectPhext(char* buf, size_t len);
 	int detectCodepage(char* buf, size_t len);
 	bool loadFileData(Document doc, int64_t fileSize, const TCHAR* filename, char* buffer, Utf8_16_Read* UnicodeConvertor, LoadedFileFormat& fileFormat);
 	LangType detectLanguageFromTextBegining(const unsigned char *data, size_t dataLen);
@@ -420,4 +426,7 @@ private:
 	std::mutex _reloadFromDiskRequestGuard;
 
 	bool _isInaccessible = false;
+
+	// phext support
+	phext::Coordinate _coordinate;
 };

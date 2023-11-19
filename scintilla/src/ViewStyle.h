@@ -8,6 +8,8 @@
 #ifndef VIEWSTYLE_H
 #define VIEWSTYLE_H
 
+#include "phext/phext_string.h"
+
 namespace Scintilla::Internal {
 
 /**
@@ -122,6 +124,8 @@ public:
 	bool indicatorsSetFore;
 	Scintilla::Technology technology;
 	int lineHeight;
+	bool phextEnabled = false;
+	phext::Coordinate phextCoordinate;
 	int lineOverlap;
 	XYPOSITION maxAscent;
 	XYPOSITION maxDescent;

@@ -139,8 +139,9 @@ CharacterExtracted::CharacterExtracted(const unsigned char *charBytes, size_t wi
 }
 
 Document::Document(DocumentOption options) :
-	cb(!FlagSet(options, DocumentOption::StylesNone), FlagSet(options, DocumentOption::TextLarge)),
 	durationStyleOneByte(0.000001, 0.0000001, 0.00001) {
+
+	node() = std::make_shared<CellBuffer>(!FlagSet(options, DocumentOption::StylesNone), FlagSet(options, DocumentOption::TextLarge));
 	refCount = 0;
 #ifdef _WIN32
 	eolMode = EndOfLine::CrLf;
@@ -173,8 +174,8 @@ Document::Document(DocumentOption options) :
 
 	decorations = DecorationListCreate(IsLarge());
 
-	cb.SetPerLine(this);
-	cb.SetUTF8Substance(CpUtf8 == dbcsCodePage);
+	cb().SetPerLine(this);
+	cb().SetUTF8Substance(CpUtf8 == dbcsCodePage);
 }
 
 Document::~Document() {
@@ -260,8 +261,8 @@ bool Document::SetDBCSCodePage(int dbcsCodePage_) {
 	if (dbcsCodePage != dbcsCodePage_) {
 		dbcsCodePage = dbcsCodePage_;
 		SetCaseFolder(nullptr);
-		cb.SetLineEndTypes(lineEndBitSet & LineEndTypesSupported());
-		cb.SetUTF8Substance(CpUtf8 == dbcsCodePage);
+		cb().SetLineEndTypes(lineEndBitSet & LineEndTypesSupported());
+		cb().SetUTF8Substance(CpUtf8 == dbcsCodePage);
 		ModifiedAt(0);	// Need to restyle whole document
 		return true;
 	} else {
@@ -273,9 +274,9 @@ bool Document::SetLineEndTypesAllowed(LineEndType lineEndBitSet_) {
 	if (lineEndBitSet != lineEndBitSet_) {
 		lineEndBitSet = lineEndBitSet_;
 		const LineEndType lineEndBitSetActive = lineEndBitSet & LineEndTypesSupported();
-		if (lineEndBitSetActive != cb.GetLineEndTypes()) {
+		if (lineEndBitSetActive != cb().GetLineEndTypes()) {
 			ModifiedAt(0);
-			cb.SetLineEndTypes(lineEndBitSetActive);
+			cb().SetLineEndTypes(lineEndBitSetActive);
 			return true;
 		} else {
 			return false;
@@ -286,7 +287,7 @@ bool Document::SetLineEndTypesAllowed(LineEndType lineEndBitSet_) {
 }
 
 void Document::SetSavePoint() {
-	cb.SetSavePoint();
+	cb().SetSavePoint();
 	NotifySavePoint(true);
 }
 
@@ -296,14 +297,14 @@ void Document::TentativeUndo() {
 	CheckReadOnly();
 	if (enteredModification == 0) {
 		enteredModification++;
-		if (!cb.IsReadOnly()) {
-			const bool startSavePoint = cb.IsSavePoint();
+		if (!cb().IsReadOnly()) {
+			const bool startSavePoint = cb().IsSavePoint();
 			bool multiLine = false;
-			const int steps = cb.TentativeSteps();
+			const int steps = cb().TentativeSteps();
 			//Platform::DebugPrintf("Steps=%d\n", steps);
 			for (int step = 0; step < steps; step++) {
 				const Sci::Line prevLinesTotal = LinesTotal();
-				const Action &action = cb.GetUndoStep();
+				const Action &action = cb().GetUndoStep();
 				if (action.at == ActionType::remove) {
 					NotifyModified(DocModification(
 									ModificationFlags::BeforeInsert | ModificationFlags::Undo, action));
@@ -315,7 +316,7 @@ void Document::TentativeUndo() {
 					NotifyModified(DocModification(
 									ModificationFlags::BeforeDelete | ModificationFlags::Undo, action));
 				}
-				cb.PerformUndoStep();
+				cb().PerformUndoStep();
 				if (action.at != ActionType::container) {
 					ModifiedAt(action.position);
 				}
@@ -341,11 +342,11 @@ void Document::TentativeUndo() {
 											   linesAdded, action.data.get()));
 			}
 
-			const bool endSavePoint = cb.IsSavePoint();
+			const bool endSavePoint = cb().IsSavePoint();
 			if (startSavePoint != endSavePoint)
 				NotifySavePoint(endSavePoint);
 
-			cb.TentativeCommit();
+			cb().TentativeCommit();
 		}
 		enteredModification--;
 	}
@@ -446,11 +447,11 @@ int Document::MarkerHandleFromLine(Sci::Line line, int which) const noexcept {
 }
 
 Sci_Position SCI_METHOD Document::LineStart(Sci_Position line) const {
-	return cb.LineStart(line);
+	return cb().LineStart(line);
 }
 
 Range Document::LineRange(Sci::Line line) const noexcept {
-	return {cb.LineStart(line), cb.LineStart(line + 1)};
+	return {cb().LineStart(line), cb().LineStart(line + 1)};
 }
 
 bool Document::IsLineStartPosition(Sci::Position position) const noexcept {
@@ -458,7 +459,7 @@ bool Document::IsLineStartPosition(Sci::Position position) const noexcept {
 }
 
 Sci_Position SCI_METHOD Document::LineEnd(Sci_Position line) const {
-	return cb.LineEnd(line);
+	return cb().LineEnd(line);
 }
 
 void SCI_METHOD Document::SetErrorStatus(int status) {
@@ -469,20 +470,20 @@ void SCI_METHOD Document::SetErrorStatus(int status) {
 }
 
 Sci_Position SCI_METHOD Document::LineFromPosition(Sci_Position pos) const {
-	return cb.LineFromPosition(pos);
+	return cb().LineFromPosition(pos);
 }
 
 Sci::Line Document::SciLineFromPosition(Sci::Position pos) const noexcept {
 	// Avoids casting in callers for this very common function
-	return cb.LineFromPosition(pos);
+	return cb().LineFromPosition(pos);
 }
 
 Sci::Position Document::LineStartPosition(Sci::Position position) const noexcept {
-	return cb.LineStart(cb.LineFromPosition(position));
+	return cb().LineStart(cb().LineFromPosition(position));
 }
 
 Sci::Position Document::LineEndPosition(Sci::Position position) const noexcept {
-	return cb.LineEnd(cb.LineFromPosition(position));
+	return cb().LineEnd(cb().LineFromPosition(position));
 }
 
 bool Document::IsLineEndPosition(Sci::Position position) const noexcept {
@@ -498,7 +499,7 @@ Sci::Position Document::VCHomePosition(Sci::Position position) const {
 	const Sci::Position startPosition = LineStart(line);
 	const Sci::Position endLine = LineEnd(line);
 	Sci::Position startText = startPosition;
-	while (startText < endLine && IsSpaceOrTab(cb.CharAt(startText)))
+	while (startText < endLine && IsSpaceOrTab(cb().CharAt(startText)))
 		startText++;
 	if (position == startText)
 		return startPosition;
@@ -507,15 +508,15 @@ Sci::Position Document::VCHomePosition(Sci::Position position) const {
 }
 
 Sci::Position Document::IndexLineStart(Sci::Line line, LineCharacterIndexType lineCharacterIndex) const noexcept {
-	return cb.IndexLineStart(line, lineCharacterIndex);
+	return cb().IndexLineStart(line, lineCharacterIndex);
 }
 
 Sci::Line Document::LineFromPositionIndex(Sci::Position pos, LineCharacterIndexType lineCharacterIndex) const noexcept {
-	return cb.LineFromPositionIndex(pos, lineCharacterIndex);
+	return cb().LineFromPositionIndex(pos, lineCharacterIndex);
 }
 
 Sci::Line Document::LineFromPositionAfter(Sci::Line line, Sci::Position length) const noexcept {
-	const Sci::Position posAfter = cb.LineStart(line) + length;
+	const Sci::Position posAfter = cb().LineStart(line) + length;
 	if (posAfter >= LengthNoExcept()) {
 		return LinesTotal();
 	}
@@ -666,7 +667,7 @@ bool Document::IsCrLf(Sci::Position pos) const noexcept {
 		return false;
 	if (pos >= (LengthNoExcept() - 1))
 		return false;
-	return (cb.CharAt(pos) == '\r') && (cb.CharAt(pos + 1) == '\n');
+	return (cb().CharAt(pos) == '\r') && (cb().CharAt(pos + 1) == '\n');
 }
 
 int Document::LenChar(Sci::Position pos) const noexcept {
@@ -677,7 +678,7 @@ int Document::LenChar(Sci::Position pos) const noexcept {
 		return 2;
 	}
 
-	const unsigned char leadByte = cb.UCharAt(pos);
+	const unsigned char leadByte = cb().UCharAt(pos);
 	if (!dbcsCodePage || UTF8IsAscii(leadByte)) {
 		// Common case: ASCII character
 		return 1;
@@ -686,7 +687,7 @@ int Document::LenChar(Sci::Position pos) const noexcept {
 		const int widthCharBytes = UTF8BytesOfLead[leadByte];
 		unsigned char charBytes[UTF8MaxBytes] = { leadByte, 0, 0, 0 };
 		for (int b = 1; b < widthCharBytes; b++) {
-			charBytes[b] = cb.UCharAt(pos + b);
+			charBytes[b] = cb().UCharAt(pos + b);
 		}
 		const int utf8status = UTF8Classify(charBytes, widthCharBytes);
 		if (utf8status & UTF8MaskInvalid) {
@@ -696,7 +697,7 @@ int Document::LenChar(Sci::Position pos) const noexcept {
 			return utf8status & UTF8MaskWidth;
 		}
 	} else {
-		if (IsDBCSLeadByteNoExcept(leadByte) && IsDBCSTrailByteNoExcept(cb.CharAt(pos + 1))) {
+		if (IsDBCSLeadByteNoExcept(leadByte) && IsDBCSTrailByteNoExcept(cb().CharAt(pos + 1))) {
 			return 2;
 		} else {
 			return 1;
@@ -706,11 +707,11 @@ int Document::LenChar(Sci::Position pos) const noexcept {
 
 bool Document::InGoodUTF8(Sci::Position pos, Sci::Position &start, Sci::Position &end) const noexcept {
 	Sci::Position trail = pos;
-	while ((trail>0) && (pos-trail < UTF8MaxBytes) && UTF8IsTrailByte(cb.UCharAt(trail-1)))
+	while ((trail>0) && (pos-trail < UTF8MaxBytes) && UTF8IsTrailByte(cb().UCharAt(trail-1)))
 		trail--;
 	start = (trail > 0) ? trail-1 : trail;
 
-	const unsigned char leadByte = cb.UCharAt(start);
+	const unsigned char leadByte = cb().UCharAt(start);
 	const int widthCharBytes = UTF8BytesOfLead[leadByte];
 	if (widthCharBytes == 1) {
 		return false;
@@ -721,8 +722,8 @@ bool Document::InGoodUTF8(Sci::Position pos, Sci::Position &start, Sci::Position
 			// pos too far from lead
 			return false;
 		unsigned char charBytes[UTF8MaxBytes] = {leadByte,0,0,0};
-		for (Sci::Position b=1; b<widthCharBytes && ((start+b) < cb.Length()); b++)
-			charBytes[b] = cb.CharAt(start+b);
+		for (Sci::Position b=1; b<widthCharBytes && ((start+b) < cb().Length()); b++)
+			charBytes[b] = cb().CharAt(start+b);
 		const int utf8status = UTF8Classify(charBytes, widthCharBytes);
 		if (utf8status & UTF8MaskInvalid)
 			return false;
@@ -754,7 +755,7 @@ Sci::Position Document::MovePositionOutsideChar(Sci::Position pos, Sci::Position
 
 	if (dbcsCodePage) {
 		if (CpUtf8 == dbcsCodePage) {
-			const unsigned char ch = cb.UCharAt(pos);
+			const unsigned char ch = cb().UCharAt(pos);
 			// If ch is not a trail byte then pos is valid intercharacter position
 			if (UTF8IsTrailByte(ch)) {
 				Sci::Position startUTF = pos;
@@ -777,7 +778,7 @@ Sci::Position Document::MovePositionOutsideChar(Sci::Position pos, Sci::Position
 
 			// Step back until a non-lead-byte is found.
 			Sci::Position posCheck = pos;
-			while ((posCheck > posStartLine) && IsDBCSLeadByteNoExcept(cb.CharAt(posCheck-1)))
+			while ((posCheck > posStartLine) && IsDBCSLeadByteNoExcept(cb().CharAt(posCheck-1)))
 				posCheck--;
 
 			// Check from known start of character.
@@ -808,14 +809,14 @@ Sci::Position Document::NextPosition(Sci::Position pos, int moveDir) const noexc
 	const int increment = (moveDir > 0) ? 1 : -1;
 	if (pos + increment <= 0)
 		return 0;
-	if (pos + increment >= cb.Length())
-		return cb.Length();
+	if (pos + increment >= cb().Length())
+		return cb().Length();
 
 	if (dbcsCodePage) {
 		if (CpUtf8 == dbcsCodePage) {
 			if (increment == 1) {
 				// Simple forward movement case so can avoid some checks
-				const unsigned char leadByte = cb.UCharAt(pos);
+				const unsigned char leadByte = cb().UCharAt(pos);
 				if (UTF8IsAscii(leadByte)) {
 					// Single byte character or invalid
 					pos++;
@@ -823,7 +824,7 @@ Sci::Position Document::NextPosition(Sci::Position pos, int moveDir) const noexc
 					const int widthCharBytes = UTF8BytesOfLead[leadByte];
 					unsigned char charBytes[UTF8MaxBytes] = {leadByte,0,0,0};
 					for (int b=1; b<widthCharBytes; b++)
-						charBytes[b] = cb.CharAt(pos+b);
+						charBytes[b] = cb().CharAt(pos+b);
 					const int utf8status = UTF8Classify(charBytes, widthCharBytes);
 					if (utf8status & UTF8MaskInvalid)
 						pos++;
@@ -833,7 +834,7 @@ Sci::Position Document::NextPosition(Sci::Position pos, int moveDir) const noexc
 			} else {
 				// Examine byte before position
 				pos--;
-				const unsigned char ch = cb.UCharAt(pos);
+				const unsigned char ch = cb().UCharAt(pos);
 				// If ch is not a trail byte then pos is valid intercharacter position
 				if (UTF8IsTrailByte(ch)) {
 					// If ch is a trail byte in a valid UTF-8 character then return start of character
@@ -849,8 +850,8 @@ Sci::Position Document::NextPosition(Sci::Position pos, int moveDir) const noexc
 			if (moveDir > 0) {
 				const int mbsize = IsDBCSDualByteAt(pos) ? 2 : 1;
 				pos += mbsize;
-				if (pos > cb.Length())
-					pos = cb.Length();
+				if (pos > cb().Length())
+					pos = cb().Length();
 			} else {
 				// Anchor DBCS calculations at start of line because start of line can
 				// not be a DBCS trail byte.
@@ -859,7 +860,7 @@ Sci::Position Document::NextPosition(Sci::Position pos, int moveDir) const noexc
 				// http://msdn.microsoft.com/en-us/library/cc194790.aspx
 				if ((pos - 1) <= posStartLine) {
 					return pos - 1;
-				} else if (IsDBCSLeadByteNoExcept(cb.CharAt(pos - 1))) {
+				} else if (IsDBCSLeadByteNoExcept(cb().CharAt(pos - 1))) {
 					// Should actually be trail byte
 					if (IsDBCSDualByteAt(pos - 2)) {
 						return pos - 2;
@@ -870,7 +871,7 @@ Sci::Position Document::NextPosition(Sci::Position pos, int moveDir) const noexc
 				} else {
 					// Otherwise, step back until a non-lead-byte is found.
 					Sci::Position posTemp = pos - 1;
-					while (posStartLine <= --posTemp && IsDBCSLeadByteNoExcept(cb.CharAt(posTemp)))
+					while (posStartLine <= --posTemp && IsDBCSLeadByteNoExcept(cb().CharAt(posTemp)))
 						;
 					// Now posTemp+1 must point to the beginning of a character,
 					// so figure out whether we went back an even or an odd
@@ -906,7 +907,7 @@ CharacterExtracted Document::CharacterAfter(Sci::Position position) const noexce
 	if (position >= LengthNoExcept()) {
 		return CharacterExtracted(unicodeReplacementChar, 0);
 	}
-	const unsigned char leadByte = cb.UCharAt(position);
+	const unsigned char leadByte = cb().UCharAt(position);
 	if (!dbcsCodePage || UTF8IsAscii(leadByte)) {
 		// Common case: ASCII character
 		return CharacterExtracted(leadByte, 1);
@@ -915,11 +916,11 @@ CharacterExtracted Document::CharacterAfter(Sci::Position position) const noexce
 		const int widthCharBytes = UTF8BytesOfLead[leadByte];
 		unsigned char charBytes[UTF8MaxBytes] = { leadByte, 0, 0, 0 };
 		for (int b = 1; b<widthCharBytes; b++)
-			charBytes[b] = cb.UCharAt(position + b);
+			charBytes[b] = cb().UCharAt(position + b);
 		return CharacterExtracted(charBytes, widthCharBytes);
 	} else {
 		if (IsDBCSLeadByteNoExcept(leadByte)) {
-			const unsigned char trailByte = cb.UCharAt(position + 1);
+			const unsigned char trailByte = cb().UCharAt(position + 1);
 			if (IsDBCSTrailByteNoExcept(trailByte)) {
 				return CharacterExtracted::DBCS(leadByte, trailByte);
 			}
@@ -932,7 +933,7 @@ CharacterExtracted Document::CharacterBefore(Sci::Position position) const noexc
 	if (position <= 0) {
 		return CharacterExtracted(unicodeReplacementChar, 0);
 	}
-	const unsigned char previousByte = cb.UCharAt(position - 1);
+	const unsigned char previousByte = cb().UCharAt(position - 1);
 	if (0 == dbcsCodePage) {
 		return CharacterExtracted(previousByte, 1);
 	}
@@ -950,7 +951,7 @@ CharacterExtracted Document::CharacterBefore(Sci::Position position) const noexc
 				const Sci::Position widthCharBytes = endUTF - startUTF;
 				unsigned char charBytes[UTF8MaxBytes] = { 0, 0, 0, 0 };
 				for (Sci::Position b = 0; b<widthCharBytes; b++)
-					charBytes[b] = cb.UCharAt(startUTF + b);
+					charBytes[b] = cb().UCharAt(startUTF + b);
 				return CharacterExtracted(charBytes, widthCharBytes);
 			}
 			// Else invalid UTF-8 so return position of isolated trail byte
@@ -1006,14 +1007,14 @@ Sci::Position Document::GetRelativePositionUTF16(Sci::Position positionStart, Sc
 
 int SCI_METHOD Document::GetCharacterAndWidth(Sci_Position position, Sci_Position *pWidth) const {
 	int bytesInCharacter = 1;
-	const unsigned char leadByte = cb.UCharAt(position);
+	const unsigned char leadByte = cb().UCharAt(position);
 	int character = leadByte;
 	if (dbcsCodePage && !UTF8IsAscii(leadByte)) {
 		if (CpUtf8 == dbcsCodePage) {
 			const int widthCharBytes = UTF8BytesOfLead[leadByte];
 			unsigned char charBytes[UTF8MaxBytes] = {leadByte,0,0,0};
 			for (int b=1; b<widthCharBytes; b++)
-				charBytes[b] = cb.UCharAt(position+b);
+				charBytes[b] = cb().UCharAt(position+b);
 			const int utf8status = UTF8Classify(charBytes, widthCharBytes);
 			if (utf8status & UTF8MaskInvalid) {
 				// Report as singleton surrogate values which are invalid Unicode
@@ -1024,7 +1025,7 @@ int SCI_METHOD Document::GetCharacterAndWidth(Sci_Position position, Sci_Positio
 			}
 		} else {
 			if (IsDBCSLeadByteNoExcept(leadByte)) {
-				const unsigned char trailByte = cb.UCharAt(position + 1);
+				const unsigned char trailByte = cb().UCharAt(position + 1);
 				if (IsDBCSTrailByteNoExcept(trailByte)) {
 					bytesInCharacter = 2;
 					character = (leadByte << 8) | trailByte;
@@ -1119,8 +1120,8 @@ int Document::DBCSDrawBytes(std::string_view text) const noexcept {
 }
 
 bool Document::IsDBCSDualByteAt(Sci::Position pos) const noexcept {
-	return IsDBCSLeadByteNoExcept(cb.CharAt(pos))
-		&& IsDBCSTrailByteNoExcept(cb.CharAt(pos + 1));
+	return IsDBCSLeadByteNoExcept(cb().CharAt(pos))
+		&& IsDBCSTrailByteNoExcept(cb().CharAt(pos + 1));
 }
 
 // Need to break text into segments near end but taking into account the
@@ -1208,7 +1209,7 @@ void Document::ModifiedAt(Sci::Position pos) noexcept {
 }
 
 void Document::CheckReadOnly() {
-	if (cb.IsReadOnly() && enteredReadOnlyCount == 0) {
+	if (cb().IsReadOnly() && enteredReadOnlyCount == 0) {
 		enteredReadOnlyCount++;
 		NotifyModifyAttempt();
 		enteredReadOnlyCount--;
@@ -1241,17 +1242,17 @@ bool Document::DeleteChars(Sci::Position pos, Sci::Position len) {
 		return false;
 	} else {
 		enteredModification++;
-		if (!cb.IsReadOnly()) {
+		if (!cb().IsReadOnly()) {
 			NotifyModified(
 			    DocModification(
 			        ModificationFlags::BeforeDelete | ModificationFlags::User,
 			        pos, len,
 				0, nullptr));
 			const Sci::Line prevLinesTotal = LinesTotal();
-			const bool startSavePoint = cb.IsSavePoint();
+			const bool startSavePoint = cb().IsSavePoint();
 			bool startSequence = false;
-			const char *text = cb.DeleteChars(pos, len, startSequence);
-			if (startSavePoint && cb.IsCollectingUndo())
+			const char *text = cb().DeleteChars(pos, len, startSequence);
+			if (startSavePoint && cb().IsCollectingUndo())
 				NotifySavePoint(false);
 			if ((pos < LengthNoExcept()) || (pos == 0))
 				ModifiedAt(pos);
@@ -1266,7 +1267,15 @@ bool Document::DeleteChars(Sci::Position pos, Sci::Position len) {
 		}
 		enteredModification--;
 	}
-	return !cb.IsReadOnly();
+	return !cb().IsReadOnly();
+}
+
+/**
+ * Re-build the phext space from a serialized stream.
+ */
+void Document::SetPhext(const char* s, Sci::Position insertLength)
+{
+	// TODO: Working on inserting the raw byte stream here
 }
 
 /**
@@ -1277,7 +1286,7 @@ Sci::Position Document::InsertString(Sci::Position position, const char *s, Sci:
 		return 0;
 	}
 	CheckReadOnly();	// Application may change read only state here
-	if (cb.IsReadOnly()) {
+	if (cb().IsReadOnly()) {
 		return 0;
 	}
 	if (enteredModification != 0) {
@@ -1301,10 +1310,10 @@ Sci::Position Document::InsertString(Sci::Position position, const char *s, Sci:
 			position, insertLength,
 			0, s));
 	const Sci::Line prevLinesTotal = LinesTotal();
-	const bool startSavePoint = cb.IsSavePoint();
+	const bool startSavePoint = cb().IsSavePoint();
 	bool startSequence = false;
-	const char *text = cb.InsertString(position, s, insertLength, startSequence);
-	if (startSavePoint && cb.IsCollectingUndo())
+	const char *text = cb().InsertString(position, s, insertLength, startSequence);
+	if (startSavePoint && cb().IsCollectingUndo())
 		NotifySavePoint(false);
 	ModifiedAt(position);
 	NotifyModified(
@@ -1348,12 +1357,12 @@ void * SCI_METHOD Document::ConvertToDocument() {
 Sci::Position Document::Undo() {
 	Sci::Position newPos = -1;
 	CheckReadOnly();
-	if ((enteredModification == 0) && (cb.IsCollectingUndo())) {
+	if ((enteredModification == 0) && (cb().IsCollectingUndo())) {
 		enteredModification++;
-		if (!cb.IsReadOnly()) {
-			const bool startSavePoint = cb.IsSavePoint();
+		if (!cb().IsReadOnly()) {
+			const bool startSavePoint = cb().IsSavePoint();
 			bool multiLine = false;
-			const int steps = cb.StartUndo();
+			const int steps = cb().StartUndo();
 			//Platform::DebugPrintf("Steps=%d\n", steps);
 			Sci::Position coalescedRemovePos = -1;
 			Sci::Position coalescedRemoveLen = 0;
@@ -1361,7 +1370,7 @@ Sci::Position Document::Undo() {
 			Sci::Position prevRemoveActionLen = 0;
 			for (int step = 0; step < steps; step++) {
 				const Sci::Line prevLinesTotal = LinesTotal();
-				const Action &action = cb.GetUndoStep();
+				const Action &action = cb().GetUndoStep();
 				if (action.at == ActionType::remove) {
 					NotifyModified(DocModification(
 									ModificationFlags::BeforeInsert | ModificationFlags::Undo, action));
@@ -1379,7 +1388,7 @@ Sci::Position Document::Undo() {
 					NotifyModified(DocModification(
 									ModificationFlags::BeforeDelete | ModificationFlags::Undo, action));
 				}
-				cb.PerformUndoStep();
+				cb().PerformUndoStep();
 				if (action.at != ActionType::container) {
 					ModifiedAt(action.position);
 					newPos = action.position;
@@ -1421,7 +1430,7 @@ Sci::Position Document::Undo() {
 											   linesAdded, action.data.get()));
 			}
 
-			const bool endSavePoint = cb.IsSavePoint();
+			const bool endSavePoint = cb().IsSavePoint();
 			if (startSavePoint != endSavePoint)
 				NotifySavePoint(endSavePoint);
 		}
@@ -1433,15 +1442,15 @@ Sci::Position Document::Undo() {
 Sci::Position Document::Redo() {
 	Sci::Position newPos = -1;
 	CheckReadOnly();
-	if ((enteredModification == 0) && (cb.IsCollectingUndo())) {
+	if ((enteredModification == 0) && (cb().IsCollectingUndo())) {
 		enteredModification++;
-		if (!cb.IsReadOnly()) {
-			const bool startSavePoint = cb.IsSavePoint();
+		if (!cb().IsReadOnly()) {
+			const bool startSavePoint = cb().IsSavePoint();
 			bool multiLine = false;
-			const int steps = cb.StartRedo();
+			const int steps = cb().StartRedo();
 			for (int step = 0; step < steps; step++) {
 				const Sci::Line prevLinesTotal = LinesTotal();
-				const Action &action = cb.GetRedoStep();
+				const Action &action = cb().GetRedoStep();
 				if (action.at == ActionType::insert) {
 					NotifyModified(DocModification(
 									ModificationFlags::BeforeInsert | ModificationFlags::Redo, action));
@@ -1453,7 +1462,7 @@ Sci::Position Document::Redo() {
 					NotifyModified(DocModification(
 									ModificationFlags::BeforeDelete | ModificationFlags::Redo, action));
 				}
-				cb.PerformRedoStep();
+				cb().PerformRedoStep();
 				if (action.at != ActionType::container) {
 					ModifiedAt(action.position);
 					newPos = action.position;
@@ -1481,7 +1490,7 @@ Sci::Position Document::Redo() {
 									linesAdded, action.data.get()));
 			}
 
-			const bool endSavePoint = cb.IsSavePoint();
+			const bool endSavePoint = cb().IsSavePoint();
 			if (startSavePoint != endSavePoint)
 				NotifySavePoint(endSavePoint);
 		}
@@ -1532,7 +1541,7 @@ int SCI_METHOD Document::GetLineIndentation(Sci_Position line) {
 		const Sci::Position lineStart = LineStart(line);
 		const Sci::Position length = Length();
 		for (Sci::Position i = lineStart; i < length; i++) {
-			const char ch = cb.CharAt(i);
+			const char ch = cb().CharAt(i);
 			if (ch == ' ')
 				indent++;
 			else if (ch == '\t')
@@ -1565,7 +1574,7 @@ Sci::Position Document::GetLineIndentPosition(Sci::Line line) const {
 		return 0;
 	Sci::Position pos = LineStart(line);
 	const Sci::Position length = Length();
-	while ((pos < length) && IsSpaceOrTab(cb.CharAt(pos))) {
+	while ((pos < length) && IsSpaceOrTab(cb().CharAt(pos))) {
 		pos++;
 	}
 	return pos;
@@ -1576,7 +1585,7 @@ Sci::Position Document::GetColumn(Sci::Position pos) const {
 	const Sci::Line line = SciLineFromPosition(pos);
 	if ((line >= 0) && (line < LinesTotal())) {
 		for (Sci::Position i = LineStart(line); i < pos;) {
-			const char ch = cb.CharAt(i);
+			const char ch = cb().CharAt(i);
 			if (ch == '\t') {
 				column = NextTab(column, tabInChars);
 				i++;
@@ -1630,7 +1639,7 @@ Sci::Position Document::FindColumn(Sci::Line line, Sci::Position column) {
 	if ((line >= 0) && (line < LinesTotal())) {
 		Sci::Position columnCurrent = 0;
 		while ((columnCurrent < column) && (position < Length())) {
-			const char ch = cb.CharAt(position);
+			const char ch = cb().CharAt(position);
 			if (ch == '\t') {
 				columnCurrent = NextTab(columnCurrent, tabInChars);
 				if (columnCurrent > column)
@@ -1691,9 +1700,9 @@ void Document::ConvertLineEnds(EndOfLine eolModeSet) {
 	UndoGroup ug(this);
 
 	for (Sci::Position pos = 0; pos < Length(); pos++) {
-		const char ch = cb.CharAt(pos);
+		const char ch = cb().CharAt(pos);
 		if (ch == '\r') {
-			if (cb.CharAt(pos + 1) == '\n') {
+			if (cb().CharAt(pos + 1) == '\n') {
 				// CRLF
 				if (eolModeSet == EndOfLine::Cr) {
 					DeleteChars(pos + 1, 1); // Delete the LF
@@ -1738,14 +1747,14 @@ std::string_view Document::EOLString() const noexcept {
 
 DocumentOption Document::Options() const noexcept {
 	return (IsLarge() ? DocumentOption::TextLarge : DocumentOption::Default) |
-		(cb.HasStyles() ? DocumentOption::Default : DocumentOption::StylesNone);
+		(cb().HasStyles() ? DocumentOption::Default : DocumentOption::StylesNone);
 }
 
 bool Document::IsWhiteLine(Sci::Line line) const {
 	Sci::Position currentChar = LineStart(line);
 	const Sci::Position endLine = LineEnd(line);
 	while (currentChar < endLine) {
-		if (!IsSpaceOrTab(cb.CharAt(currentChar))) {
+		if (!IsSpaceOrTab(cb().CharAt(currentChar))) {
 			return false;
 		}
 		++currentChar;
@@ -2035,7 +2044,7 @@ void Document::SetCaseFolder(std::unique_ptr<CaseFolder> pcf_) noexcept {
 }
 
 CharacterExtracted Document::ExtractCharacter(Sci::Position position) const noexcept {
-	const unsigned char leadByte = cb.UCharAt(position);
+	const unsigned char leadByte = cb().UCharAt(position);
 	if (UTF8IsAscii(leadByte)) {
 		// Common case: ASCII character
 		return CharacterExtracted(leadByte, 1);
@@ -2043,7 +2052,7 @@ CharacterExtracted Document::ExtractCharacter(Sci::Position position) const noex
 	const int widthCharBytes = UTF8BytesOfLead[leadByte];
 	unsigned char charBytes[UTF8MaxBytes] = { leadByte, 0, 0, 0 };
 	for (int b=1; b<widthCharBytes; b++)
-		charBytes[b] = cb.UCharAt(position + b);
+		charBytes[b] = cb().UCharAt(position + b);
 	return CharacterExtracted(charBytes, widthCharBytes);
 }
 
@@ -2117,7 +2126,7 @@ Sci::Position Document::FindText(Sci::Position minPos, Sci::Position maxPos, con
 			// Back all of a character
 			pos = NextPosition(pos, increment);
 		}
-		const SplitView cbView = cb.AllView();
+		const SplitView cbView = cb().AllView();
 		if (caseSensitive) {
 			const Sci::Position endSearch = (startPos <= endPos) ? endPos - lengthFind + 1 : endPos;
 			const unsigned char charStartSearch =  search[0];
@@ -2312,23 +2321,23 @@ const char *Document::SubstituteByPosition(const char *text, Sci::Position *leng
 }
 
 LineCharacterIndexType Document::LineCharacterIndex() const noexcept {
-	return cb.LineCharacterIndex();
+	return cb().LineCharacterIndex();
 }
 
 void Document::AllocateLineCharacterIndex(LineCharacterIndexType lineCharacterIndex) {
-	return cb.AllocateLineCharacterIndex(lineCharacterIndex);
+	return cb().AllocateLineCharacterIndex(lineCharacterIndex);
 }
 
 void Document::ReleaseLineCharacterIndex(LineCharacterIndexType lineCharacterIndex) {
-	return cb.ReleaseLineCharacterIndex(lineCharacterIndex);
+	return cb().ReleaseLineCharacterIndex(lineCharacterIndex);
 }
 
 Sci::Line Document::LinesTotal() const noexcept {
-	return cb.Lines();
+	return cb().Lines();
 }
 
 void Document::AllocateLines(Sci::Line lines) {
-	cb.AllocateLines(lines);
+	cb().AllocateLines(lines);
 }
 
 void Document::SetDefaultCharClasses(bool includeWordClass) {
@@ -2361,7 +2370,7 @@ bool SCI_METHOD Document::SetStyleFor(Sci_Position length, char style) {
 	} else {
 		enteredStyling++;
 		const Sci::Position prevEndStyled = endStyled;
-		if (cb.SetStyleFor(endStyled, length, style)) {
+		if (cb().SetStyleFor(endStyled, length, style)) {
 			const DocModification mh(ModificationFlags::ChangeStyle | ModificationFlags::User,
 			                   prevEndStyled, length);
 			NotifyModified(mh);
@@ -2382,7 +2391,7 @@ bool SCI_METHOD Document::SetStyles(Sci_Position length, const char *styles) {
 		Sci::Position endMod = 0;
 		for (int iPos = 0; iPos < length; iPos++, endStyled++) {
 			PLATFORM_ASSERT(endStyled < Length());
-			if (cb.SetStyleAt(endStyled, styles[iPos])) {
+			if (cb().SetStyleAt(endStyled, styles[iPos])) {
 				if (!didChange) {
 					startMod = endStyled;
 				}
@@ -2734,13 +2743,13 @@ Sci::Position Document::WordPartRight(Sci::Position pos) const {
 }
 
 Sci::Position Document::ExtendStyleRange(Sci::Position pos, int delta, bool singleLine) noexcept {
-	const char sStart = cb.StyleAt(pos);
+	const char sStart = cb().StyleAt(pos);
 	if (delta < 0) {
-		while (pos > 0 && (cb.StyleAt(pos) == sStart) && (!singleLine || !IsEOLCharacter(cb.CharAt(pos))))
+		while (pos > 0 && (cb().StyleAt(pos) == sStart) && (!singleLine || !IsEOLCharacter(cb().CharAt(pos))))
 			pos--;
 		pos++;
 	} else {
-		while (pos < (LengthNoExcept()) && (cb.StyleAt(pos) == sStart) && (!singleLine || !IsEOLCharacter(cb.CharAt(pos))))
+		while (pos < (LengthNoExcept()) && (cb().StyleAt(pos) == sStart) && (!singleLine || !IsEOLCharacter(cb().CharAt(pos))))
 			pos++;
 	}
 	return pos;

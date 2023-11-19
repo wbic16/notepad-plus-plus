@@ -67,7 +67,7 @@ namespace // anonymous
 
 Buffer::Buffer(FileManager * pManager, BufferID id, Document doc, DocFileStatus type, const TCHAR *fileName, bool isLargeFile)
 	// type must be either DOC_REGULAR or DOC_UNNAMED
-	: _pManager(pManager) , _id(id), _doc(doc), _lang(L_TEXT), _isLargeFile(isLargeFile)
+	: _pManager(pManager) , _id(id), _doc(doc), _lang(L_TEXT), _isLargeFile(isLargeFile), _coordinate(phext::Coordinate())
 {
 	NppParameters& nppParamInst = NppParameters::getInstance();
 	const NewDocDefaultSettings& ndds = (nppParamInst.getNppGUI()).getNewDocDefaultSettings();
@@ -1425,6 +1425,34 @@ BufferID FileManager::bufferFromDocument(Document doc, bool isMainEditZone)
 	return id;
 }
 
+bool FileManager::detectPhext(char* buf, size_t len)
+{
+	char* p = buf;
+	while (p != 0)
+	{
+		if (p == buf + len)
+		{
+			break;
+		}
+		switch (*p)
+		{
+			case phext::Break::SCROLL:
+			case phext::Break::SECTION:
+			case phext::Break::CHAPTER:
+			case phext::Break::BOOK:
+			case phext::Break::VOLUME:
+			case phext::Break::COLLECTION:
+			case phext::Break::SERIES:
+			case phext::Break::SHELF:
+			case phext::Break::LIBRARY:
+				return true;
+		}
+		++p;
+	}
+
+	return false;
+}
+
 int FileManager::detectCodepage(char* buf, size_t len)
 {
 	int codepage = -1;
@@ -1637,32 +1665,47 @@ bool FileManager::loadFileData(Document doc, int64_t fileSize, const TCHAR * fil
 			}
 			if (lenFile == 0) break;
 
-            if (isFirstTime)
-            {
-				NppGUI& nppGui = NppParameters::getInstance().getNppGUI();
+         if (isFirstTime)
+         {
+			NppGUI& nppGui = NppParameters::getInstance().getNppGUI();
 
-				// check if file contain any BOM
-                if (Utf8_16_Read::determineEncoding((unsigned char *)data, lenFile) != uni8Bit)
-                {
-                    // if file contains any BOM, then encoding will be erased,
-                    // and the document will be interpreted as UTF
-					fileFormat._encoding = -1;
-				}
-				else if (fileFormat._encoding == -1)
-				{
-					if (nppGui._detectEncoding)
-						fileFormat._encoding = detectCodepage(data, lenFile);
-                }
+			// check if file contain any BOM
+               if (Utf8_16_Read::determineEncoding((unsigned char *)data, lenFile) != uni8Bit)
+               {
+                  // if file contains any BOM, then encoding will be erased,
+                  // and the document will be interpreted as UTF
+				fileFormat._encoding = -1;
+			}
+			else if (fileFormat._encoding == -1)
+			{
+				if (nppGui._detectEncoding)
+					fileFormat._encoding = detectCodepage(data, lenFile);
+         }
+
+			fileFormat._phext = detectPhext(data, lenFile);
+			if (fileFormat._phext)
+			{
+				_pscratchTilla->execute(SCI_SET_PHEXT_ENABLED, 1, 0);
+				_pscratchTilla->execute(SCI_SET_PHEXT_SCROLL, 1, 0);
+				_pscratchTilla->execute(SCI_SET_PHEXT_SECTION, 1, 0);
+				_pscratchTilla->execute(SCI_SET_PHEXT_CHAPTER, 1, 0);
+				_pscratchTilla->execute(SCI_SET_PHEXT_BOOK, 1, 0);
+				_pscratchTilla->execute(SCI_SET_PHEXT_VOLUME, 1, 0);
+				_pscratchTilla->execute(SCI_SET_PHEXT_COLLECTION, 1, 0);
+				_pscratchTilla->execute(SCI_SET_PHEXT_SERIES, 1, 0);
+				_pscratchTilla->execute(SCI_SET_PHEXT_SHELF, 1, 0);
+				_pscratchTilla->execute(SCI_SET_PHEXT_LIBRARY, 1, 0);
+			}
 				
-				bool isLargeFile = fileSize >= nppGui._largeFileRestriction._largeFileSizeDefInByte;
-				if (!isLargeFile && fileFormat._language == L_TEXT)
-				{
-					// check the language du fichier
-					fileFormat._language = detectLanguageFromTextBegining((unsigned char *)data, lenFile);
-				}
+			bool isLargeFile = fileSize >= nppGui._largeFileRestriction._largeFileSizeDefInByte;
+			if (!isLargeFile && fileFormat._language == L_TEXT)
+			{
+				// check the language du fichier
+				fileFormat._language = detectLanguageFromTextBegining((unsigned char *)data, lenFile);
+			}
 
-                isFirstTime = false;
-            }
+               isFirstTime = false;
+         }
 
 			if (fileFormat._encoding != -1)
 			{

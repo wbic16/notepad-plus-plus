@@ -8,6 +8,8 @@
 #ifndef DOCUMENT_H
 #define DOCUMENT_H
 
+#include "phext/phext_string.h"
+
 namespace Scintilla::Internal {
 
 class DocWatcher;
@@ -276,7 +278,37 @@ public:
 
 private:
 	int refCount;
-	CellBuffer cb;
+	phext::Coordinate coordinate;
+	using PhextCellScroll = std::shared_ptr<CellBuffer>;
+	using PhextCellSection = phext::MappedDimension<PhextCellScroll>;
+	using PhextCellChapter = phext::MappedDimension<PhextCellSection>;
+	using PhextCellBook = phext::MappedDimension<PhextCellChapter>;
+	using PhextCellVolume = phext::MappedDimension<PhextCellBook>;
+	using PhextCellCollection = phext::MappedDimension<PhextCellVolume>;
+	using PhextCellSeries = phext::MappedDimension<PhextCellCollection>;
+	using PhextCellShelf = phext::MappedDimension<PhextCellSeries>;
+	using PhextCellLibrary = phext::MappedDimension<PhextCellShelf>;
+	using PhextCellPhext = phext::MappedDimension<PhextCellLibrary>;
+
+	CellBuffer& cb() const
+	{
+		PhextCellScroll node = phext.get(coordinate.LibraryID).get(coordinate.ShelfID).get(coordinate.SeriesID).get(coordinate.CollectionID).get(coordinate.VolumeID).get(coordinate.BookID).get(coordinate.ChapterID).get(coordinate.SectionID).get(coordinate.ScrollID);
+		return *node;
+	}
+	CellBuffer& cb()
+	{
+		PhextCellScroll node = phext.get(coordinate.LibraryID).get(coordinate.ShelfID).get(coordinate.SeriesID).get(coordinate.CollectionID).get(coordinate.VolumeID).get(coordinate.BookID).get(coordinate.ChapterID).get(coordinate.SectionID).get(coordinate.ScrollID);
+		return *node;
+	}
+	PhextCellScroll& node() const
+	{
+		return phext.get(coordinate.LibraryID).get(coordinate.ShelfID).get(coordinate.SeriesID).get(coordinate.CollectionID).get(coordinate.VolumeID).get(coordinate.BookID).get(coordinate.ChapterID).get(coordinate.SectionID).get(coordinate.ScrollID);
+	}
+	PhextCellScroll& node()
+	{
+		return phext.get(coordinate.LibraryID).get(coordinate.ShelfID).get(coordinate.SeriesID).get(coordinate.CollectionID).get(coordinate.VolumeID).get(coordinate.BookID).get(coordinate.ChapterID).get(coordinate.SectionID).get(coordinate.ScrollID);
+	}
+	mutable PhextCellPhext phext;
 	CharClassify charClass;
 	CharacterCategoryMap charMap;
 	std::unique_ptr<CaseFolder> pcf;
@@ -340,9 +372,9 @@ public:
 
 	Scintilla::LineEndType LineEndTypesSupported() const;
 	bool SetDBCSCodePage(int dbcsCodePage_);
-	Scintilla::LineEndType GetLineEndTypesAllowed() const noexcept { return cb.GetLineEndTypes(); }
+	Scintilla::LineEndType GetLineEndTypesAllowed() const noexcept { return cb().GetLineEndTypes(); }
 	bool SetLineEndTypesAllowed(Scintilla::LineEndType lineEndBitSet_);
-	Scintilla::LineEndType GetLineEndTypesActive() const noexcept { return cb.GetLineEndTypes(); }
+	Scintilla::LineEndType GetLineEndTypesActive() const noexcept { return cb().GetLineEndTypes(); }
 
 	int SCI_METHOD Version() const override {
 		return Scintilla::dvRelease4;
@@ -353,7 +385,7 @@ public:
 	Sci_Position SCI_METHOD LineFromPosition(Sci_Position pos) const override;
 	Sci::Line SciLineFromPosition(Sci::Position pos) const noexcept;	// Avoids casting LineFromPosition
 	Sci::Position ClampPositionIntoDocument(Sci::Position pos) const noexcept;
-	bool ContainsLineEnd(const char *s, Sci::Position length) const noexcept { return cb.ContainsLineEnd(s, length); }
+	bool ContainsLineEnd(const char *s, Sci::Position length) const noexcept { return cb().ContainsLineEnd(s, length); }
 	bool IsCrLf(Sci::Position pos) const noexcept;
 	int LenChar(Sci::Position pos) const noexcept;
 	bool InGoodUTF8(Sci::Position pos, Sci::Position &start, Sci::Position &end) const noexcept;
@@ -379,6 +411,7 @@ public:
 	void CheckReadOnly();
 	void TrimReplacement(std::string_view &text, Range &range) const noexcept;
 	bool DeleteChars(Sci::Position pos, Sci::Position len);
+	void SetPhext(const char* s, Sci::Position insertLength);
 	Sci::Position InsertString(Sci::Position position, const char *s, Sci::Position insertLength);
 	Sci::Position InsertString(Sci::Position position, std::string_view sv);
 	void ChangeInsertion(const char *s, Sci::Position length);
@@ -386,33 +419,33 @@ public:
 	void * SCI_METHOD ConvertToDocument() override;
 	Sci::Position Undo();
 	Sci::Position Redo();
-	bool CanUndo() const noexcept { return cb.CanUndo(); }
-	bool CanRedo() const noexcept { return cb.CanRedo(); }
-	void DeleteUndoHistory() { cb.DeleteUndoHistory(); }
+	bool CanUndo() const noexcept { return cb().CanUndo(); }
+	bool CanRedo() const noexcept { return cb().CanRedo(); }
+	void DeleteUndoHistory() { cb().DeleteUndoHistory(); }
 	bool SetUndoCollection(bool collectUndo) {
-		return cb.SetUndoCollection(collectUndo);
+		return cb().SetUndoCollection(collectUndo);
 	}
-	bool IsCollectingUndo() const noexcept { return cb.IsCollectingUndo(); }
-	void BeginUndoAction() { cb.BeginUndoAction(); }
-	void EndUndoAction() { cb.EndUndoAction(); }
-	void AddUndoAction(Sci::Position token, bool mayCoalesce) { cb.AddUndoAction(token, mayCoalesce); }
+	bool IsCollectingUndo() const noexcept { return cb().IsCollectingUndo(); }
+	void BeginUndoAction() { cb().BeginUndoAction(); }
+	void EndUndoAction() { cb().EndUndoAction(); }
+	void AddUndoAction(Sci::Position token, bool mayCoalesce) { cb().AddUndoAction(token, mayCoalesce); }
 	void SetSavePoint();
-	bool IsSavePoint() const noexcept { return cb.IsSavePoint(); }
+	bool IsSavePoint() const noexcept { return cb().IsSavePoint(); }
 
-	void TentativeStart() { cb.TentativeStart(); }
-	void TentativeCommit() { cb.TentativeCommit(); }
+	void TentativeStart() { cb().TentativeStart(); }
+	void TentativeCommit() { cb().TentativeCommit(); }
 	void TentativeUndo();
-	bool TentativeActive() const noexcept { return cb.TentativeActive(); }
+	bool TentativeActive() const noexcept { return cb().TentativeActive(); }
 
-	void ChangeHistorySet(bool set) { cb.ChangeHistorySet(set); }
-	[[nodiscard]] int EditionAt(Sci::Position pos) const noexcept { return cb.EditionAt(pos); }
-	[[nodiscard]] Sci::Position EditionEndRun(Sci::Position pos) const noexcept { return cb.EditionEndRun(pos); }
-	[[nodiscard]] unsigned int EditionDeletesAt(Sci::Position pos) const noexcept { return cb.EditionDeletesAt(pos); }
-	[[nodiscard]] Sci::Position EditionNextDelete(Sci::Position pos) const noexcept { return cb.EditionNextDelete(pos); }
+	void ChangeHistorySet(bool set) { cb().ChangeHistorySet(set); }
+	[[nodiscard]] int EditionAt(Sci::Position pos) const noexcept { return cb().EditionAt(pos); }
+	[[nodiscard]] Sci::Position EditionEndRun(Sci::Position pos) const noexcept { return cb().EditionEndRun(pos); }
+	[[nodiscard]] unsigned int EditionDeletesAt(Sci::Position pos) const noexcept { return cb().EditionDeletesAt(pos); }
+	[[nodiscard]] Sci::Position EditionNextDelete(Sci::Position pos) const noexcept { return cb().EditionNextDelete(pos); }
 
-	const char * SCI_METHOD BufferPointer() override { return cb.BufferPointer(); }
-	const char *RangePointer(Sci::Position position, Sci::Position rangeLength) noexcept { return cb.RangePointer(position, rangeLength); }
-	Sci::Position GapPosition() const noexcept { return cb.GapPosition(); }
+	const char * SCI_METHOD BufferPointer() override { return cb().BufferPointer(); }
+	const char *RangePointer(Sci::Position position, Sci::Position rangeLength) noexcept { return cb().RangePointer(position, rangeLength); }
+	Sci::Position GapPosition() const noexcept { return cb().GapPosition(); }
 
 	int SCI_METHOD GetLineIndentation(Sci_Position line) override;
 	Sci::Position SetLineIndentation(Sci::Line line, Sci::Position indent);
@@ -425,23 +458,23 @@ public:
 	static std::string TransformLineEnds(const char *s, size_t len, Scintilla::EndOfLine eolModeWanted);
 	void ConvertLineEnds(Scintilla::EndOfLine eolModeSet);
 	std::string_view EOLString() const noexcept;
-	void SetReadOnly(bool set) { cb.SetReadOnly(set); }
-	bool IsReadOnly() const noexcept { return cb.IsReadOnly(); }
-	bool IsLarge() const noexcept { return cb.IsLarge(); }
+	void SetReadOnly(bool set) { cb().SetReadOnly(set); }
+	bool IsReadOnly() const noexcept { return cb().IsReadOnly(); }
+	bool IsLarge() const noexcept { return cb().IsLarge(); }
 	Scintilla::DocumentOption Options() const noexcept;
 
 	void DelChar(Sci::Position pos);
 	void DelCharBack(Sci::Position pos);
 
-	char CharAt(Sci::Position position) const noexcept { return cb.CharAt(position); }
+	char CharAt(Sci::Position position) const noexcept { return cb().CharAt(position); }
 	void SCI_METHOD GetCharRange(char *buffer, Sci_Position position, Sci_Position lengthRetrieve) const override {
-		cb.GetCharRange(buffer, position, lengthRetrieve);
+		cb().GetCharRange(buffer, position, lengthRetrieve);
 	}
-	char SCI_METHOD StyleAt(Sci_Position position) const override { return cb.StyleAt(position); }
-	char StyleAtNoExcept(Sci_Position position) const noexcept { return cb.StyleAt(position); }
-	int StyleIndexAt(Sci_Position position) const noexcept { return static_cast<unsigned char>(cb.StyleAt(position)); }
+	char SCI_METHOD StyleAt(Sci_Position position) const override { return cb().StyleAt(position); }
+	char StyleAtNoExcept(Sci_Position position) const noexcept { return cb().StyleAt(position); }
+	int StyleIndexAt(Sci_Position position) const noexcept { return static_cast<unsigned char>(cb().StyleAt(position)); }
 	void GetStyleRange(unsigned char *buffer, Sci::Position position, Sci::Position lengthRetrieve) const {
-		cb.GetStyleRange(buffer, position, lengthRetrieve);
+		cb().GetStyleRange(buffer, position, lengthRetrieve);
 	}
 	int GetMark(Sci::Line line, bool includeChangeHistory) const;
 	Sci::Line MarkerNext(Sci::Line lineStart, int mask) const noexcept;
@@ -477,9 +510,9 @@ public:
 	Sci::Position ExtendWordSelect(Sci::Position pos, int delta, bool onlyWordCharacters=false) const;
 	Sci::Position NextWordStart(Sci::Position pos, int delta) const;
 	Sci::Position NextWordEnd(Sci::Position pos, int delta) const;
-	Sci_Position SCI_METHOD Length() const override { return cb.Length(); }
-	Sci::Position LengthNoExcept() const noexcept { return cb.Length(); }
-	void Allocate(Sci::Position newSize) { cb.Allocate(newSize); }
+	Sci_Position SCI_METHOD Length() const override { return cb().Length(); }
+	Sci::Position LengthNoExcept() const noexcept { return cb().Length(); }
+	void Allocate(Sci::Position newSize) { cb().Allocate(newSize); }
 
 	CharacterExtracted ExtractCharacter(Sci::Position position) const noexcept;
 

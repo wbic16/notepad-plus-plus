@@ -199,6 +199,7 @@ protected:	// ScintillaBase subclass needs access to much of Editor
 	Scintilla::Technology technology;
 	Point sizeRGBAImage;
 	float scaleRGBAImage;
+	phext::Coordinate coordinate;
 
 	MarginView marginView;
 	EditView view;

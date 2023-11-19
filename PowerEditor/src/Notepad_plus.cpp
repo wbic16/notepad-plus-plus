@@ -428,7 +428,7 @@ LRESULT Notepad_plus::init(HWND hwnd)
 	bool willBeShown = nppGUI._statusBarShow;
 	_statusBar.init(_pPublicInterface->getHinst(), hwnd, 6);
 	_statusBar.setPartWidth(STATUSBAR_DOC_SIZE, nppParam._dpiManager.scaleX(220));
-	_statusBar.setPartWidth(STATUSBAR_CUR_POS, nppParam._dpiManager.scaleX(260));
+	_statusBar.setPartWidth(STATUSBAR_CUR_POS, nppParam._dpiManager.scaleX(640)); // expanded due to phext \o/
 	_statusBar.setPartWidth(STATUSBAR_EOF_FORMAT, nppParam._dpiManager.scaleX(110));
 	_statusBar.setPartWidth(STATUSBAR_UNICODE_TYPE, nppParam._dpiManager.scaleX(120));
 	_statusBar.setPartWidth(STATUSBAR_TYPING_MODE, nppParam._dpiManager.scaleX(30));
@@ -4287,13 +4287,43 @@ void Notepad_plus::updateStatusBar()
 				TEXT("..."));  // show ellipsis for line count if too many selections are active
 	}
 
-	TCHAR strLnColSel[128];
+	TCHAR strLnColSel[256];
 	intptr_t curLN = _pEditView->getCurrentLineNumber();
-	intptr_t curCN = _pEditView->getCurrentColumnNumber();
-	wsprintf(strLnColSel, TEXT("Ln : %s    Col : %s    %s"),
-		commafyInt(curLN + 1).c_str(),
-		commafyInt(curCN + 1).c_str(),
-		strSel);
+	intptr_t curCN = _pEditView->getCurrentColumnNumber();	
+
+	//if (_pEditView->isPhextEnabled())
+	{
+		const uint16_t scroll = _pEditView->getCurrentPhextScroll();
+		const uint16_t section = _pEditView->getCurrentPhextSection();
+		const uint16_t chapter = _pEditView->getCurrentPhextChapter();
+		const uint16_t book = _pEditView->getCurrentPhextBook();
+		const uint16_t volume = _pEditView->getCurrentPhextVolume();
+		const uint16_t collection = _pEditView->getCurrentPhextCollection();
+		const uint16_t series = _pEditView->getCurrentPhextSeries();
+		const uint16_t shelf = _pEditView->getCurrentPhextShelf();
+		const uint16_t library = _pEditView->getCurrentPhextLibrary();
+
+		wsprintf(strLnColSel, TEXT("Ln: %s  Col: %s  %s  Scroll: %d  Section: %d  Chapter: %d  Book: %d  Volume: %d  Collection: %d  Series: %d  Shelf: %d  Library: %d"),
+			commafyInt(curLN + 1).c_str(),
+			commafyInt(curCN + 1).c_str(),
+			strSel,
+			scroll,
+			section,
+			chapter,
+			book,
+			volume,
+			collection,
+			series,
+			shelf,
+			library);
+	}
+	/*else
+	{
+		wsprintf(strLnColSel, TEXT("Ln :  %s   Col :  %s   %s"),
+			commafyInt(curLN + 1).c_str(),
+			commafyInt(curCN + 1).c_str(),
+			strSel);
+	}*/
 	_statusBar.setText(strLnColSel, STATUSBAR_CUR_POS);
 
 	_statusBar.setText(_pEditView->execute(SCI_GETOVERTYPE) ? TEXT("OVR") : TEXT("INS"), STATUSBAR_TYPING_MODE);

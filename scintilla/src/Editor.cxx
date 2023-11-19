@@ -128,6 +128,7 @@ Editor::Editor() : durationWrapOneByte(0.000001, 0.00000001, 0.00001) {
 	stylesValid = false;
 	technology = Technology::Default;
 	scaleRGBAImage = 100.0f;
+	coordinate = phext::Coordinate();
 
 	cursorMode = CursorShape::Normal;
 
@@ -3948,6 +3949,43 @@ int Editor::KeyCommand(Message iMessage) {
 	case Message::NewLine:
 		NewLine();
 		break;
+
+	case Message::PhextScrollBreak:
+		coordinate.scrollBreak();
+		break;
+
+	case Message::PhextSectionBreak:
+		coordinate.sectionBreak();
+		break;
+
+	case Message::PhextChapterBreak:
+		coordinate.chapterBreak();
+		break;
+
+	case Message::PhextBookBreak:
+		coordinate.bookBreak();
+		break;
+
+	case Message::PhextVolumeBreak:
+		coordinate.volumeBreak();
+		break;
+
+	case Message::PhextCollectionBreak:
+		coordinate.collectionBreak();
+		break;
+
+	case Message::PhextSeriesBreak:
+		coordinate.seriesBreak();
+		break;
+
+	case Message::PhextShelfBreak:
+		coordinate.shelfBreak();
+		break;
+
+	case Message::PhextLibraryBreak:
+		coordinate.libraryBreak();
+		break;
+
 	case Message::FormFeed:
 		AddChar('\f');
 		break;
@@ -6464,6 +6502,10 @@ sptr_t Editor::WndProc(Message iMessage, uptr_t wParam, sptr_t lParam) {
 			ConstCharPtrFromSPtr(lParam), PositionFromUPtr(wParam));
 		return 0;
 
+	case Message::AppendPhext:
+		pdoc->SetPhext(ConstCharPtrFromSPtr(lParam), PositionFromUPtr(wParam));
+		return 0;
+
 	case Message::ClearAll:
 		ClearAll();
 		return 0;
@@ -7016,6 +7058,77 @@ sptr_t Editor::WndProc(Message iMessage, uptr_t wParam, sptr_t lParam) {
 	case Message::TextHeight:
 		RefreshStyleData();
 		return vs.lineHeight;
+
+	case Message::GetPhextEnabled:
+		return vs.phextEnabled;
+		break;
+
+	case Message::SetPhextEnabled:
+		vs.phextEnabled = wParam != 0;
+		break;
+
+	case Message::GetPhextScroll:
+		return vs.phextCoordinate.ScrollID;
+
+	case Message::GetPhextSection:
+		return vs.phextCoordinate.SectionID;
+
+	case Message::GetPhextChapter:
+		return vs.phextCoordinate.ChapterID;
+
+	case Message::GetPhextBook:
+		return vs.phextCoordinate.BookID;
+	
+	case Message::GetPhextVolume:
+		return vs.phextCoordinate.VolumeID;
+	
+	case Message::GetPhextCollection:
+		return vs.phextCoordinate.CollectionID;
+
+	case Message::GetPhextSeries:
+		return vs.phextCoordinate.SeriesID;
+
+	case Message::GetPhextShelf:
+		return vs.phextCoordinate.ShelfID;
+
+	case Message::GetPhextLibrary:
+		return vs.phextCoordinate.LibraryID;
+
+	case Message::SetPhextScroll:
+		vs.phextCoordinate.ScrollID = static_cast<uint16_t>(wParam);
+		break;
+
+	case Message::SetPhextSection:
+		vs.phextCoordinate.SectionID = static_cast<uint16_t>(wParam);
+		break;
+
+	case Message::SetPhextChapter:
+		vs.phextCoordinate.ChapterID = static_cast<uint16_t>(wParam);
+		break;
+
+	case Message::SetPhextBook:
+		vs.phextCoordinate.BookID = static_cast<uint16_t>(wParam);
+		break;
+
+	case Message::SetPhextVolume:
+		vs.phextCoordinate.VolumeID = static_cast<uint16_t>(wParam);
+		break;
+
+	case Message::SetPhextCollection:
+		vs.phextCoordinate.CollectionID = static_cast<uint16_t>(wParam);
+		break;
+
+	case Message::SetPhextSeries:
+		vs.phextCoordinate.SeriesID = static_cast<uint16_t>(wParam);
+		break;
+
+	case Message::SetPhextShelf:
+		vs.phextCoordinate.ShelfID = static_cast<uint16_t>(wParam);
+		break;
+
+	case Message::SetPhextLibrary:
+		vs.phextCoordinate.LibraryID = static_cast<uint16_t>(wParam);
+		break;
 
 	case Message::SetEndAtLastLine:
 		PLATFORM_ASSERT((wParam == 0) || (wParam == 1));

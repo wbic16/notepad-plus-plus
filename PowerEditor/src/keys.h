@@ -15,6 +15,19 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 
+// begin phext support
+#include "phext/phext.h"
+#define VK_PHEXT_SCROLL     phext::Break::SCROLL
+#define VK_PHEXT_SECTION    phext::Break::SECTION
+#define VK_PHEXT_CHAPTER    phext::Break::CHAPTER
+#define VK_PHEXT_BOOK       phext::Break::BOOK
+#define VK_PHEXT_VOLUME     phext::Break::VOLUME
+#define VK_PHEXT_COLLECTION phext::Break::COLLECTION
+#define VK_PHEXT_SERIES     phext::Break::SERIES
+#define VK_PHEXT_SHELF      phext::Break::SHELF
+#define VK_PHEXT_LIBRARY    phext::Break::LIBRARY
+// end phext support
+
 /*
 See winuser.h
 Altered list to support VK_0-9 and VK_A-Z
