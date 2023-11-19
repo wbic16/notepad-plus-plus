@@ -3952,38 +3952,47 @@ int Editor::KeyCommand(Message iMessage) {
 
 	case Message::PhextScrollBreak:
 		coordinate.scrollBreak();
+		NewLine();
 		break;
 
 	case Message::PhextSectionBreak:
 		coordinate.sectionBreak();
+		NewLine();
 		break;
 
 	case Message::PhextChapterBreak:
 		coordinate.chapterBreak();
+		NewLine();
 		break;
 
 	case Message::PhextBookBreak:
 		coordinate.bookBreak();
+		NewLine();
 		break;
 
 	case Message::PhextVolumeBreak:
 		coordinate.volumeBreak();
+		NewLine();
 		break;
 
 	case Message::PhextCollectionBreak:
 		coordinate.collectionBreak();
+		NewLine();
 		break;
 
 	case Message::PhextSeriesBreak:
 		coordinate.seriesBreak();
+		NewLine();
 		break;
 
 	case Message::PhextShelfBreak:
 		coordinate.shelfBreak();
+		NewLine();
 		break;
 
 	case Message::PhextLibraryBreak:
 		coordinate.libraryBreak();
+		NewLine();
 		break;
 
 	case Message::FormFeed:

@@ -3178,13 +3178,63 @@ void Notepad_plus::command(int id)
 
 		case IDM_SETTING_SHORTCUT_MAPPER :
 		case IDM_SETTING_SHORTCUT_MAPPER_MACRO :
-        case IDM_SETTING_SHORTCUT_MAPPER_RUN :
+		case IDM_SETTING_SHORTCUT_MAPPER_RUN :
 		{
             GridState st = id==IDM_SETTING_SHORTCUT_MAPPER_MACRO?STATE_MACRO:id==IDM_SETTING_SHORTCUT_MAPPER_RUN?STATE_USER:STATE_MENU;
 			ShortcutMapper shortcutMapper;
             shortcutMapper.init(_pPublicInterface->getHinst(), _pPublicInterface->getHSelf(), st);
 			shortcutMapper.doDialog(_nativeLangSpeaker.isRTL());
 			shortcutMapper.destroy();
+			break;
+		}
+		case IDM_SETTING_PHEXT_ENTER_IS_RETURN:
+		{
+			_phextBreakType = phext::Break::LINE;
+			break;
+		}
+		case IDM_SETTING_PHEXT_ENTER_IS_SCROLL:
+		{
+			_phextBreakType = phext::Break::SCROLL;
+			break;
+		}
+		case IDM_SETTING_PHEXT_ENTER_IS_SECTION:
+		{
+			_phextBreakType = phext::Break::SECTION;
+			break;
+		}
+		case IDM_SETTING_PHEXT_ENTER_IS_CHAPTER:
+		{
+			_phextBreakType = phext::Break::CHAPTER;
+			break;
+		}
+		case IDM_SETTING_PHEXT_ENTER_IS_BOOK:
+		{
+			_phextBreakType = phext::Break::BOOK;
+			break;
+		}
+		case IDM_SETTING_PHEXT_ENTER_IS_VOLUME:
+		{
+			_phextBreakType = phext::Break::VOLUME;
+			break;
+		}
+		case IDM_SETTING_PHEXT_ENTER_IS_COLLECTION:
+		{
+			_phextBreakType = phext::Break::COLLECTION;
+			break;
+		}
+		case IDM_SETTING_PHEXT_ENTER_IS_SERIES:
+		{
+			_phextBreakType = phext::Break::SERIES;
+			break;
+		}
+		case IDM_SETTING_PHEXT_ENTER_IS_SHELF:
+		{
+			_phextBreakType = phext::Break::SHELF;
+			break;
+		}
+		case IDM_SETTING_PHEXT_ENTER_IS_LIBRARY:
+		{
+			_phextBreakType = phext::Break::LIBRARY;
 			break;
 		}
 		case IDM_SETTING_PREFERENCE:

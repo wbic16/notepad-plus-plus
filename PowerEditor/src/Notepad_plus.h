@@ -338,6 +338,10 @@ private:
 
 	bool _sysMenuEntering = false;
 
+	// phext preferences
+	phext::Coordinate _phextCoordinate;
+	phext::Break      _phextBreakType;
+
 	// make sure we don't recursively call doClose when closing the last file with -quitOnEmpty
 	bool _isAttemptingCloseOnQuit = false;
 

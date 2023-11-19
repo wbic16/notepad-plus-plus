@@ -124,6 +124,7 @@ Notepad_plus::Notepad_plus()
 	: _autoCompleteMain(&_mainEditView)
 	, _autoCompleteSub(&_subEditView)
 	, _smartHighlighter(&_findReplaceDlg)
+	, _phextBreakType(phext::Break::LINE)
 {
 	ZeroMemory(&_prevSelectedRange, sizeof(_prevSelectedRange));
 
@@ -428,7 +429,7 @@ LRESULT Notepad_plus::init(HWND hwnd)
 	bool willBeShown = nppGUI._statusBarShow;
 	_statusBar.init(_pPublicInterface->getHinst(), hwnd, 6);
 	_statusBar.setPartWidth(STATUSBAR_DOC_SIZE, nppParam._dpiManager.scaleX(220));
-	_statusBar.setPartWidth(STATUSBAR_CUR_POS, nppParam._dpiManager.scaleX(640)); // expanded due to phext \o/
+	_statusBar.setPartWidth(STATUSBAR_CUR_POS, nppParam._dpiManager.scaleX(460)); // expanded due to phext \o/
 	_statusBar.setPartWidth(STATUSBAR_EOF_FORMAT, nppParam._dpiManager.scaleX(110));
 	_statusBar.setPartWidth(STATUSBAR_UNICODE_TYPE, nppParam._dpiManager.scaleX(120));
 	_statusBar.setPartWidth(STATUSBAR_TYPING_MODE, nppParam._dpiManager.scaleX(30));
@@ -476,6 +477,20 @@ LRESULT Notepad_plus::init(HWND hwnd)
 
 	macroMenuItems.attach(hMacroMenu, macroPosBase, IDM_SETTING_SHORTCUT_MAPPER_MACRO, TEXT("Modify Shortcut/Delete Macro..."));
 
+	// Phext menu
+	HMENU hPhextMenu = ::GetSubMenu(_mainMenuHandle, MENUINDEX_PHEXT);
+	DynamicMenu& phextMenuItems = nppParam.getPhextMenuItems();
+	::InsertMenu(hPhextMenu, 0, MF_BYPOSITION, static_cast<UINT>(-1), 0);
+	phextMenuItems.attach(hPhextMenu, 0, IDM_SETTING_PHEXT_ENTER_IS_RETURN,     TEXT("Enter -> Return - \\n"));
+	phextMenuItems.attach(hPhextMenu, 0, IDM_SETTING_PHEXT_ENTER_IS_SCROLL,     TEXT("Enter -> Scroll Break - SC"));	
+	phextMenuItems.attach(hPhextMenu, 0, IDM_SETTING_PHEXT_ENTER_IS_SECTION,    TEXT("Enter -> Section Break - SN"));
+	phextMenuItems.attach(hPhextMenu, 0, IDM_SETTING_PHEXT_ENTER_IS_CHAPTER,    TEXT("Enter -> Chapter Break - CH"));
+	phextMenuItems.attach(hPhextMenu, 0, IDM_SETTING_PHEXT_ENTER_IS_BOOK,       TEXT("Enter -> Book Break - BK"));
+	phextMenuItems.attach(hPhextMenu, 0, IDM_SETTING_PHEXT_ENTER_IS_VOLUME,     TEXT("Enter -> Volume Break - VM"));
+	phextMenuItems.attach(hPhextMenu, 0, IDM_SETTING_PHEXT_ENTER_IS_COLLECTION, TEXT("Enter -> Collection Break - CN"));
+	phextMenuItems.attach(hPhextMenu, 0, IDM_SETTING_PHEXT_ENTER_IS_SERIES,     TEXT("Enter -> Series Break - SR"));
+	phextMenuItems.attach(hPhextMenu, 0, IDM_SETTING_PHEXT_ENTER_IS_SHELF,      TEXT("Enter -> Shelf Break - SF"));
+	phextMenuItems.attach(hPhextMenu, 0, IDM_SETTING_PHEXT_ENTER_IS_LIBRARY,    TEXT("Enter -> Library Break - LB"));
 
 	// Run Menu
 	HMENU hRunMenu = ::GetSubMenu(_mainMenuHandle, MENUINDEX_RUN);
@@ -2578,7 +2593,7 @@ void Notepad_plus::checkClipboard()
 
 void Notepad_plus::checkDocState()
 {
-	Buffer * curBuf = _pEditView->getCurrentBuffer();
+	Buffer * curBuf = _pEditView->getCurrentBuffer();	
 
 	bool isCurrentDirty = curBuf->isDirty();
 	bool isSeveralDirty = isCurrentDirty;
@@ -2600,6 +2615,26 @@ void Notepad_plus::checkDocState()
 	enableCommand(IDM_FILE_SAVEALL, isSeveralDirty, MENU | TOOLBAR);
 	enableCommand(IDM_VIEW_GOTO_NEW_INSTANCE, !(isCurrentDirty || isCurrentUntitled), MENU);
 	enableCommand(IDM_VIEW_LOAD_IN_NEW_INSTANCE, !(isCurrentDirty || isCurrentUntitled), MENU);
+
+	bool isPhext = _pEditView->isPhextEnabled();
+	enableCommand(IDM_PHEXT_SCROLL_UP, isPhext, MENU);
+	enableCommand(IDM_PHEXT_SCROLL_DOWN, isPhext, MENU);
+	enableCommand(IDM_PHEXT_SECTION_UP, isPhext, MENU);
+	enableCommand(IDM_PHEXT_SECTION_DOWN, isPhext, MENU);
+	enableCommand(IDM_PHEXT_CHAPTER_UP, isPhext, MENU);
+	enableCommand(IDM_PHEXT_CHAPTER_DOWN, isPhext, MENU);
+	enableCommand(IDM_PHEXT_BOOK_UP, isPhext, MENU);
+	enableCommand(IDM_PHEXT_BOOK_DOWN, isPhext, MENU);
+	enableCommand(IDM_PHEXT_VOLUME_UP, isPhext, MENU);
+	enableCommand(IDM_PHEXT_VOLUME_DOWN, isPhext, MENU);
+	enableCommand(IDM_PHEXT_COLLECTION_UP, isPhext, MENU);
+	enableCommand(IDM_PHEXT_COLLECTION_DOWN, isPhext, MENU);
+	enableCommand(IDM_PHEXT_SERIES_UP, isPhext, MENU);
+	enableCommand(IDM_PHEXT_SERIES_DOWN, isPhext, MENU);
+	enableCommand(IDM_PHEXT_SHELF_UP, isPhext, MENU);
+	enableCommand(IDM_PHEXT_SHELF_DOWN, isPhext, MENU);
+	enableCommand(IDM_PHEXT_LIBRARY_UP, isPhext, MENU);
+	enableCommand(IDM_PHEXT_LIBRARY_DOWN, isPhext, MENU);
 
 	bool isSysReadOnly = curBuf->getFileReadOnly();
 	enableCommand(IDM_EDIT_CLEARREADONLY, isSysReadOnly, MENU);
@@ -4303,7 +4338,7 @@ void Notepad_plus::updateStatusBar()
 		const uint16_t shelf = _pEditView->getCurrentPhextShelf();
 		const uint16_t library = _pEditView->getCurrentPhextLibrary();
 
-		wsprintf(strLnColSel, TEXT("Ln: %s  Col: %s  %s  Scroll: %d  Section: %d  Chapter: %d  Book: %d  Volume: %d  Collection: %d  Series: %d  Shelf: %d  Library: %d"),
+		wsprintf(strLnColSel, TEXT("Ln: %s  Col: %s  %s  SC: %d  SN: %d  CH: %d  BK: %d  VM: %d  CN: %d  SR: %d  SF: %d  LB: %d"),
 			commafyInt(curLN + 1).c_str(),
 			commafyInt(curCN + 1).c_str(),
 			strSel,

@@ -139,7 +139,7 @@ CharacterExtracted::CharacterExtracted(const unsigned char *charBytes, size_t wi
 }
 
 Document::Document(DocumentOption options) :
-	durationStyleOneByte(0.000001, 0.0000001, 0.00001) {
+	_docOptions(options), durationStyleOneByte(0.000001, 0.0000001, 0.00001) {
 
 	node() = std::make_shared<CellBuffer>(!FlagSet(options, DocumentOption::StylesNone), FlagSet(options, DocumentOption::TextLarge));
 	refCount = 0;
@@ -1275,7 +1275,70 @@ bool Document::DeleteChars(Sci::Position pos, Sci::Position len) {
  */
 void Document::SetPhext(const char* s, Sci::Position insertLength)
 {
-	// TODO: Working on inserting the raw byte stream here
+	const char* p = s;
+	coordinate = phext::Coordinate();
+	std::vector<char> buffer;
+
+	const auto bufferMerge = [this](std::vector<char>& toMerge)
+	{
+		if (toMerge.size() > 0)
+		{
+			node() = std::make_shared<CellBuffer>(!FlagSet(_docOptions, DocumentOption::StylesNone), FlagSet(_docOptions, DocumentOption::TextLarge));
+			InsertString(0, toMerge.data(), toMerge.size());
+		}
+		toMerge.clear();
+	};
+
+	while (p < (s + insertLength))
+	{
+		const char value = *p;
+		switch (value)
+		{
+			case phext::SCROLL_BREAK:
+				bufferMerge(buffer);
+				coordinate.scrollBreak();
+				break;
+			case phext::SECTION_BREAK:
+				bufferMerge(buffer);
+				coordinate.sectionBreak();
+				break;
+			case phext::CHAPTER_BREAK:
+				bufferMerge(buffer);
+				coordinate.chapterBreak();
+				break;
+			case phext::BOOK_BREAK:
+				bufferMerge(buffer);
+				coordinate.bookBreak();
+				break;
+			case phext::VOLUME_BREAK:
+				bufferMerge(buffer);
+				coordinate.volumeBreak();
+				break;
+			case phext::COLLECTION_BREAK:
+				bufferMerge(buffer);
+				coordinate.collectionBreak();
+				break;
+			case phext::SERIES_BREAK:
+				bufferMerge(buffer);
+				coordinate.seriesBreak();
+				break;
+			case phext::SHELF_BREAK:
+				bufferMerge(buffer);
+				coordinate.shelfBreak();
+				break;
+			case phext::LIBRARY_BREAK:
+				bufferMerge(buffer);
+				coordinate.libraryBreak();				
+				break;
+			default:
+				buffer.push_back(value);
+				break;
+		}
+		++p;
+	}
+
+	bufferMerge(buffer);
+	coordinate = phext::Coordinate();
 }
 
 /**

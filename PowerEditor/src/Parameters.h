@@ -1614,6 +1614,7 @@ public:
 	std::vector<MenuItemUnit>& getTabContextMenuItems() { return _tabContextMenuItems; };
 	DynamicMenu& getMacroMenuItems() { return _macroMenuItems; };
 	DynamicMenu& getRunMenuItems() { return _runMenuItems; };
+	DynamicMenu& getPhextMenuItems() { return _phextMenuItems; }
 	bool hasCustomContextMenu() const {return !_contextMenuItems.empty();};
 	bool hasCustomTabContextMenu() const {return !_tabContextMenuItems.empty();};
 
@@ -1893,6 +1894,7 @@ private:
 	std::vector<MenuItemUnit> _tabContextMenuItems;
 	DynamicMenu _macroMenuItems;
 	DynamicMenu _runMenuItems;
+	DynamicMenu _phextMenuItems;
 	Session _session;
 
 	std::wstring _shortcutsPath;

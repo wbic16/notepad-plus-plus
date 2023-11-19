@@ -1252,8 +1252,10 @@ void CommandShortcut::setCategoryFromMenu(HMENU hMenu)
 		pNativeSpeaker->getMainMenuEntryName(_category, hMenu, "file", L"File");
 	else if ( _id < IDM_SEARCH)
 		pNativeSpeaker->getMainMenuEntryName(_category, hMenu, "edit",L"Edit");
-	else if ( _id < IDM_VIEW)
+	else if ( _id < IDM_PHEXT)
 		pNativeSpeaker->getMainMenuEntryName(_category, hMenu, "search", L"Search");
+	else if ( _id < IDM_VIEW)
+		pNativeSpeaker->getMainMenuEntryName(_category, hMenu, "phext", L"Phext");
 	else if ( _id < IDM_FORMAT)
 		pNativeSpeaker->getMainMenuEntryName(_category, hMenu, "view", L"View");
 	else if ( _id < IDM_LANG)

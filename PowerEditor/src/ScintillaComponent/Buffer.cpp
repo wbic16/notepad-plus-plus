@@ -1665,72 +1665,79 @@ bool FileManager::loadFileData(Document doc, int64_t fileSize, const TCHAR * fil
 			}
 			if (lenFile == 0) break;
 
-         if (isFirstTime)
-         {
-			NppGUI& nppGui = NppParameters::getInstance().getNppGUI();
-
-			// check if file contain any BOM
-               if (Utf8_16_Read::determineEncoding((unsigned char *)data, lenFile) != uni8Bit)
-               {
-                  // if file contains any BOM, then encoding will be erased,
-                  // and the document will be interpreted as UTF
-				fileFormat._encoding = -1;
-			}
-			else if (fileFormat._encoding == -1)
+			if (isFirstTime)
 			{
-				if (nppGui._detectEncoding)
-					fileFormat._encoding = detectCodepage(data, lenFile);
-         }
+				NppGUI& nppGui = NppParameters::getInstance().getNppGUI();
 
-			fileFormat._phext = detectPhext(data, lenFile);
-			if (fileFormat._phext)
-			{
-				_pscratchTilla->execute(SCI_SET_PHEXT_ENABLED, 1, 0);
-				_pscratchTilla->execute(SCI_SET_PHEXT_SCROLL, 1, 0);
-				_pscratchTilla->execute(SCI_SET_PHEXT_SECTION, 1, 0);
-				_pscratchTilla->execute(SCI_SET_PHEXT_CHAPTER, 1, 0);
-				_pscratchTilla->execute(SCI_SET_PHEXT_BOOK, 1, 0);
-				_pscratchTilla->execute(SCI_SET_PHEXT_VOLUME, 1, 0);
-				_pscratchTilla->execute(SCI_SET_PHEXT_COLLECTION, 1, 0);
-				_pscratchTilla->execute(SCI_SET_PHEXT_SERIES, 1, 0);
-				_pscratchTilla->execute(SCI_SET_PHEXT_SHELF, 1, 0);
-				_pscratchTilla->execute(SCI_SET_PHEXT_LIBRARY, 1, 0);
-			}
-				
-			bool isLargeFile = fileSize >= nppGui._largeFileRestriction._largeFileSizeDefInByte;
-			if (!isLargeFile && fileFormat._language == L_TEXT)
-			{
-				// check the language du fichier
-				fileFormat._language = detectLanguageFromTextBegining((unsigned char *)data, lenFile);
-			}
-
-               isFirstTime = false;
-         }
-
-			if (fileFormat._encoding != -1)
-			{
-				if (fileFormat._encoding == SC_CP_UTF8)
+				// check if file contain any BOM
+				if (Utf8_16_Read::determineEncoding((unsigned char*)data, lenFile) != uni8Bit)
 				{
-					// Pass through UTF-8 (this does not check validity of characters, thus inserting a multi-byte character in two halfs is working)
-					_pscratchTilla->execute(SCI_APPENDTEXT, lenFile, reinterpret_cast<LPARAM>(data));
+					// if file contains any BOM, then encoding will be erased,
+					// and the document will be interpreted as UTF
+					fileFormat._encoding = -1;
+				}
+				else if (fileFormat._encoding == -1)
+				{
+					if (nppGui._detectEncoding)
+						fileFormat._encoding = detectCodepage(data, lenFile);
+				}
+
+				fileFormat._phext = detectPhext(data, lenFile);
+				if (fileFormat._phext)
+				{
+					_pscratchTilla->execute(SCI_SET_PHEXT_ENABLED, 1, 0);
+					_pscratchTilla->execute(SCI_SET_PHEXT_SCROLL, 1, 0);
+					_pscratchTilla->execute(SCI_SET_PHEXT_SECTION, 1, 0);
+					_pscratchTilla->execute(SCI_SET_PHEXT_CHAPTER, 1, 0);
+					_pscratchTilla->execute(SCI_SET_PHEXT_BOOK, 1, 0);
+					_pscratchTilla->execute(SCI_SET_PHEXT_VOLUME, 1, 0);
+					_pscratchTilla->execute(SCI_SET_PHEXT_COLLECTION, 1, 0);
+					_pscratchTilla->execute(SCI_SET_PHEXT_SERIES, 1, 0);
+					_pscratchTilla->execute(SCI_SET_PHEXT_SHELF, 1, 0);
+					_pscratchTilla->execute(SCI_SET_PHEXT_LIBRARY, 1, 0);
+
+					lenConvert = unicodeConvertor->convert(data, lenFile);
+					_pscratchTilla->execute(SCI_APPEND_PHEXT, lenConvert, reinterpret_cast<LPARAM>(unicodeConvertor->getNewBuf()));
+					if (format == EolType::unknown)
+						format = getEOLFormatForm(unicodeConvertor->getNewBuf(), unicodeConvertor->getNewSize(), EolType::unknown);
 				}
 				else
 				{
-					WcharMbcsConvertor& wmc = WcharMbcsConvertor::getInstance();
-					int newDataLen = 0;
-					const char *newData = wmc.encode(fileFormat._encoding, SC_CP_UTF8, data, static_cast<int32_t>(lenFile), &newDataLen, &incompleteMultibyteChar);
-					_pscratchTilla->execute(SCI_APPENDTEXT, newDataLen, reinterpret_cast<LPARAM>(newData));
-				}
+					bool isLargeFile = fileSize >= nppGui._largeFileRestriction._largeFileSizeDefInByte;
+					if (!isLargeFile && fileFormat._language == L_TEXT)
+					{
+						// check the language du fichier
+						fileFormat._language = detectLanguageFromTextBegining((unsigned char*)data, lenFile);
+					}
 
-				if (format == EolType::unknown)
-					format = getEOLFormatForm(data, lenFile, EolType::unknown);
-			}
-			else
-			{
-				lenConvert = unicodeConvertor->convert(data, lenFile);
-				_pscratchTilla->execute(SCI_APPENDTEXT, lenConvert, reinterpret_cast<LPARAM>(unicodeConvertor->getNewBuf()));
-				if (format == EolType::unknown)
-					format = getEOLFormatForm(unicodeConvertor->getNewBuf(), unicodeConvertor->getNewSize(), EolType::unknown);
+					isFirstTime = false;
+
+					if (fileFormat._encoding != -1)
+					{
+						if (fileFormat._encoding == SC_CP_UTF8)
+						{
+							// Pass through UTF-8 (this does not check validity of characters, thus inserting a multi-byte character in two halfs is working)
+							_pscratchTilla->execute(SCI_APPENDTEXT, lenFile, reinterpret_cast<LPARAM>(data));
+						}
+						else
+						{
+							WcharMbcsConvertor& wmc = WcharMbcsConvertor::getInstance();
+							int newDataLen = 0;
+							const char* newData = wmc.encode(fileFormat._encoding, SC_CP_UTF8, data, static_cast<int32_t>(lenFile), &newDataLen, &incompleteMultibyteChar);
+							_pscratchTilla->execute(SCI_APPENDTEXT, newDataLen, reinterpret_cast<LPARAM>(newData));
+						}
+
+						if (format == EolType::unknown)
+							format = getEOLFormatForm(data, lenFile, EolType::unknown);
+					}
+					else
+					{
+						lenConvert = unicodeConvertor->convert(data, lenFile);
+						_pscratchTilla->execute(SCI_APPENDTEXT, lenConvert, reinterpret_cast<LPARAM>(unicodeConvertor->getNewBuf()));
+						if (format == EolType::unknown)
+							format = getEOLFormatForm(unicodeConvertor->getNewBuf(), unicodeConvertor->getNewSize(), EolType::unknown);
+					}
+				}
 			}
 
 			sciStatus = static_cast<int>(_pscratchTilla->execute(SCI_GETSTATUS));

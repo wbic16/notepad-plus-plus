@@ -279,6 +279,7 @@ public:
 private:
 	int refCount;
 	phext::Coordinate coordinate;
+	DocumentOption _docOptions;
 	using PhextCellScroll = std::shared_ptr<CellBuffer>;
 	using PhextCellSection = phext::MappedDimension<PhextCellScroll>;
 	using PhextCellChapter = phext::MappedDimension<PhextCellSection>;

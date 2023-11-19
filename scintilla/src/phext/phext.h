@@ -12,8 +12,7 @@ namespace phext
    enum Break : uint8_t
    {
       STRING     = 0x00, // 1st
-      LINE       = 0x10, // 2nd (Newline)
-      WORD       = 0x20, // (Space)
+      LINE       = 0x0A, // 2nd (Newline)
       SCROLL     = 0x17, // 3rd
       SECTION    = 0x18, // 4th
       CHAPTER    = 0x19, // 5th

@@ -42,6 +42,7 @@ Altered list to support VK_0-9 and VK_A-Z
 
 #define VK_CLEAR          0x0C
 #define VK_RETURN         0x0D
+#define VK_ENTER          VK_RETURN
 
 #define VK_SHIFT          0x10
 #define VK_CONTROL        0x11
