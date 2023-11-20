@@ -655,4 +655,6 @@ private:
 
 	void clearChangesHistory();
 	void changedHistoryGoTo(int idGoTo);
+
+	void phextIncrement(phext::Break type, bool add);
 };

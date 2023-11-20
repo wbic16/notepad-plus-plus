@@ -35,6 +35,7 @@ namespace phext
 
    struct Coordinate
    {
+		static constexpr uint16_t LIMIT = 1024; // cap dimension size at 1K for now
       uint16_t LibraryID{1};
       uint16_t ShelfID{1};
       uint16_t SeriesID{1};

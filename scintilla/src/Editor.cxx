@@ -3175,6 +3175,7 @@ void Editor::CancelModes() {
 }
 
 void Editor::NewLine() {
+
 	InvalidateWholeSelection();
 	if (sel.IsRectangular() || !additionalSelectionTyping) {
 		// Remove non-main ranges

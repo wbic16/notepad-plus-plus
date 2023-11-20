@@ -530,6 +530,28 @@ BOOL Notepad_plus::notify(SCNotification *notification)
 					// IMPORTANT: If any submenu entry is added/moved/removed, you have to change the value of tabCmSubMenuEntryPos[] in localization.cpp file
 					
 					itemUnitArray.push_back(MenuItemUnit(IDM_FILE_CLOSE, TEXT("Close")));
+					itemUnitArray.push_back(MenuItemUnit(0, NULL));
+					itemUnitArray.push_back(MenuItemUnit(IDM_PHEXT_SCROLL_UP, TEXT("Phext Scroll Up"), TEXT("Phext")));
+					itemUnitArray.push_back(MenuItemUnit(IDM_PHEXT_SCROLL_DOWN, TEXT("Phext Scroll Down"), TEXT("Phext")));
+					itemUnitArray.push_back(MenuItemUnit(IDM_PHEXT_SECTION_UP, TEXT("Phext Section Up"), TEXT("Phext")));
+					itemUnitArray.push_back(MenuItemUnit(IDM_PHEXT_SECTION_DOWN, TEXT("Phext Section Down"), TEXT("Phext")));
+					itemUnitArray.push_back(MenuItemUnit(IDM_PHEXT_CHAPTER_UP, TEXT("Phext Chapter Up"), TEXT("Phext")));
+					itemUnitArray.push_back(MenuItemUnit(IDM_PHEXT_CHAPTER_DOWN, TEXT("Phext Chapter Down"), TEXT("Phext")));
+					itemUnitArray.push_back(MenuItemUnit(0, NULL, TEXT("Phext")));
+					itemUnitArray.push_back(MenuItemUnit(IDM_PHEXT_BOOK_UP, TEXT("Phext Book Up"), TEXT("Phext")));
+					itemUnitArray.push_back(MenuItemUnit(IDM_PHEXT_BOOK_DOWN, TEXT("Phext Book Down"), TEXT("Phext")));
+					itemUnitArray.push_back(MenuItemUnit(IDM_PHEXT_VOLUME_UP, TEXT("Phext Volume Up"), TEXT("Phext")));
+					itemUnitArray.push_back(MenuItemUnit(IDM_PHEXT_VOLUME_DOWN, TEXT("Phext Volume Down"), TEXT("Phext")));
+					itemUnitArray.push_back(MenuItemUnit(IDM_PHEXT_COLLECTION_UP, TEXT("Phext Collection Up"), TEXT("Phext")));
+					itemUnitArray.push_back(MenuItemUnit(IDM_PHEXT_COLLECTION_DOWN, TEXT("Phext Collection Down"), TEXT("Phext")));
+					itemUnitArray.push_back(MenuItemUnit(0, NULL, TEXT("Phext")));
+					itemUnitArray.push_back(MenuItemUnit(IDM_PHEXT_SERIES_UP, TEXT("Phext Series Up"), TEXT("Phext")));
+					itemUnitArray.push_back(MenuItemUnit(IDM_PHEXT_SERIES_DOWN, TEXT("Phext Series Down"), TEXT("Phext")));
+					itemUnitArray.push_back(MenuItemUnit(IDM_PHEXT_SHELF_UP, TEXT("Phext Shelf Up"), TEXT("Phext")));
+					itemUnitArray.push_back(MenuItemUnit(IDM_PHEXT_SHELF_DOWN, TEXT("Phext Shelf Down"), TEXT("Phext")));
+					itemUnitArray.push_back(MenuItemUnit(IDM_PHEXT_LIBRARY_UP, TEXT("Phext Library Up"), TEXT("Phext")));
+					itemUnitArray.push_back(MenuItemUnit(IDM_PHEXT_LIBRARY_DOWN, TEXT("Phext Library Down"), TEXT("Phext")));
+					itemUnitArray.push_back(MenuItemUnit(0, NULL));
 					itemUnitArray.push_back(MenuItemUnit(IDM_FILE_CLOSEALL_BUT_CURRENT, TEXT("Close All BUT This"), TEXT("Close Multiple Tabs")));
 					itemUnitArray.push_back(MenuItemUnit(IDM_FILE_CLOSEALL_TOLEFT, TEXT("Close All to the Left"), TEXT("Close Multiple Tabs")));
 					itemUnitArray.push_back(MenuItemUnit(IDM_FILE_CLOSEALL_TORIGHT, TEXT("Close All to the Right"), TEXT("Close Multiple Tabs")));

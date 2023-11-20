@@ -57,7 +57,70 @@ void Notepad_plus::macroPlayback(Macro macro)
 	_playingBackMacro = false;
 }
 
+void Notepad_plus::phextIncrement(phext::Break type, bool add)
+{
+	int getRequest = 0;
+	int setRequest = 0;
+	switch (type)
+	{
+		case phext::Break::LIBRARY:
+			getRequest = SCI_GET_PHEXT_LIBRARY;
+			setRequest = SCI_SET_PHEXT_LIBRARY;
+			break;
+		case phext::Break::SHELF:
+			getRequest = SCI_GET_PHEXT_SHELF;
+			setRequest = SCI_SET_PHEXT_SHELF;
+			break;
+		case phext::Break::SERIES:
+			getRequest = SCI_GET_PHEXT_SERIES;
+			setRequest = SCI_SET_PHEXT_SERIES;
+			break;
+		case phext::Break::COLLECTION:
+			getRequest = SCI_GET_PHEXT_COLLECTION;
+			setRequest = SCI_SET_PHEXT_COLLECTION;
+			break;
+		case phext::Break::VOLUME:
+			getRequest = SCI_GET_PHEXT_VOLUME;
+			setRequest = SCI_SET_PHEXT_VOLUME;
+			break;
+		case phext::Break::BOOK:
+			getRequest = SCI_GET_PHEXT_BOOK;
+			setRequest = SCI_SET_PHEXT_BOOK;
+			break;
+		case phext::Break::CHAPTER:
+			getRequest = SCI_GET_PHEXT_CHAPTER;
+			setRequest = SCI_SET_PHEXT_CHAPTER;
+			break;
+		case phext::Break::SECTION:
+			getRequest = SCI_GET_PHEXT_SECTION;
+			setRequest = SCI_SET_PHEXT_SECTION;
+			break;
+		case phext::Break::SCROLL:
+		default:
+			getRequest = SCI_GET_PHEXT_SCROLL;
+			setRequest = SCI_SET_PHEXT_SCROLL;
+			break;
+	}
 
+	uint16_t phextID = static_cast<uint16_t>(_pEditView->execute(getRequest));
+	if (add)
+	{
+		if (phextID < phext::Coordinate::LIMIT)
+		{
+			_pEditView->execute(setRequest, static_cast<WPARAM>(phextID + 1));			
+		}
+	}
+	else
+	{
+		if (phextID > 1)
+		{
+			_pEditView->execute(setRequest, static_cast<WPARAM>(phextID - 1));
+		}
+	}
+
+	_pDocTab->redraw();
+	updateStatusBar();
+}
 
 void Notepad_plus::command(int id)
 {
@@ -1122,6 +1185,61 @@ void Notepad_plus::command(int id)
 			::SendMessage(_pDocTab->getHParent(), NPPM_INTERNAL_DOCORDERCHANGED, 0, newTabIndex);
 		}
 		break;
+
+		case IDM_PHEXT_SCROLL_DOWN:
+			phextIncrement(phext::Break::SCROLL, true);
+			break;
+		case IDM_PHEXT_SCROLL_UP:
+			phextIncrement(phext::Break::SCROLL, false);
+			break;
+		case IDM_PHEXT_SECTION_DOWN:
+			phextIncrement(phext::Break::SECTION, true);
+			break;
+		case IDM_PHEXT_SECTION_UP:
+			phextIncrement(phext::Break::SECTION, false);
+			break;
+		case IDM_PHEXT_CHAPTER_DOWN:
+			phextIncrement(phext::Break::CHAPTER, true);
+			break;
+		case IDM_PHEXT_CHAPTER_UP:
+			phextIncrement(phext::Break::CHAPTER, false);
+			break;
+		case IDM_PHEXT_BOOK_DOWN:
+			phextIncrement(phext::Break::BOOK, true);
+			break;
+		case IDM_PHEXT_BOOK_UP:
+			phextIncrement(phext::Break::BOOK, false);
+			break;
+		case IDM_PHEXT_VOLUME_DOWN:
+			phextIncrement(phext::Break::VOLUME, true);
+			break;
+		case IDM_PHEXT_VOLUME_UP:
+			phextIncrement(phext::Break::VOLUME, false);
+			break;
+		case IDM_PHEXT_COLLECTION_DOWN:
+			phextIncrement(phext::Break::COLLECTION, true);
+			break;
+		case IDM_PHEXT_COLLECTION_UP:
+			phextIncrement(phext::Break::COLLECTION, false);
+			break;
+		case IDM_PHEXT_SERIES_DOWN:
+			phextIncrement(phext::Break::SERIES, true);
+			break;
+		case IDM_PHEXT_SERIES_UP:
+			phextIncrement(phext::Break::SERIES, false);
+			break;
+		case IDM_PHEXT_SHELF_DOWN:
+			phextIncrement(phext::Break::SHELF, true);
+			break;
+		case IDM_PHEXT_SHELF_UP:
+			phextIncrement(phext::Break::SHELF, false);
+			break;
+		case IDM_PHEXT_LIBRARY_DOWN:
+			phextIncrement(phext::Break::LIBRARY, true);
+			break;
+		case IDM_PHEXT_LIBRARY_UP:
+			phextIncrement(phext::Break::LIBRARY, false);
+			break;
 
 		case IDM_EDIT_DELETE:
 			_pEditView->execute(WM_CLEAR);
