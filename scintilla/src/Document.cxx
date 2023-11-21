@@ -1276,7 +1276,8 @@ bool Document::DeleteChars(Sci::Position pos, Sci::Position len) {
 void Document::SetPhext(const char* s, Sci::Position insertLength)
 {
 	const char* p = s;
-	coordinate = phext::Coordinate();
+	phext::Coordinate restore = Coordinate;
+	Coordinate = phext::Coordinate();
 	std::vector<char> buffer;
 
 	const auto bufferMerge = [this](std::vector<char>& toMerge)
@@ -1296,39 +1297,39 @@ void Document::SetPhext(const char* s, Sci::Position insertLength)
 		{
 			case phext::SCROLL_BREAK:
 				bufferMerge(buffer);
-				coordinate.scrollBreak();
+				Coordinate.scrollBreak();
 				break;
 			case phext::SECTION_BREAK:
 				bufferMerge(buffer);
-				coordinate.sectionBreak();
+				Coordinate.sectionBreak();
 				break;
 			case phext::CHAPTER_BREAK:
 				bufferMerge(buffer);
-				coordinate.chapterBreak();
+				Coordinate.chapterBreak();
 				break;
 			case phext::BOOK_BREAK:
 				bufferMerge(buffer);
-				coordinate.bookBreak();
+				Coordinate.bookBreak();
 				break;
 			case phext::VOLUME_BREAK:
 				bufferMerge(buffer);
-				coordinate.volumeBreak();
+				Coordinate.volumeBreak();
 				break;
 			case phext::COLLECTION_BREAK:
 				bufferMerge(buffer);
-				coordinate.collectionBreak();
+				Coordinate.collectionBreak();
 				break;
 			case phext::SERIES_BREAK:
 				bufferMerge(buffer);
-				coordinate.seriesBreak();
+				Coordinate.seriesBreak();
 				break;
 			case phext::SHELF_BREAK:
 				bufferMerge(buffer);
-				coordinate.shelfBreak();
+				Coordinate.shelfBreak();
 				break;
 			case phext::LIBRARY_BREAK:
 				bufferMerge(buffer);
-				coordinate.libraryBreak();				
+				Coordinate.libraryBreak();				
 				break;
 			default:
 				buffer.push_back(value);
@@ -1338,7 +1339,7 @@ void Document::SetPhext(const char* s, Sci::Position insertLength)
 	}
 
 	bufferMerge(buffer);
-	coordinate = phext::Coordinate();
+	Coordinate = restore;
 }
 
 /**

@@ -399,7 +399,7 @@ BufferID Notepad_plus::doOpen(const generic_string& fileName, bool isRecursive, 
 	BufferID buffer;
 	if (isSnapshotMode)
 	{
-		buffer = MainFileManager.loadFile(longFileName, static_cast<Document>(NULL), encoding, backupFileName, fileNameTimestamp);
+		buffer = MainFileManager.loadFile(_phextCoordinate, longFileName, static_cast<Document>(NULL), encoding, backupFileName, fileNameTimestamp);
 
 		if (buffer != BUFFER_INVALID)
 		{
@@ -419,7 +419,7 @@ BufferID Notepad_plus::doOpen(const generic_string& fileName, bool isRecursive, 
 	}
 	else
 	{
-		buffer = MainFileManager.loadFile(longFileName, static_cast<Document>(NULL), encoding);
+		buffer = MainFileManager.loadFile(_phextCoordinate, longFileName, static_cast<Document>(NULL), encoding);
 	}
 
     if (buffer != BUFFER_INVALID)
@@ -571,7 +571,7 @@ bool Notepad_plus::doReload(BufferID id, bool alert)
 		return MainFileManager.reloadBufferDeferred(id);
 	}
 
-	bool res = MainFileManager.reloadBuffer(id);
+	bool res = MainFileManager.reloadBuffer(id, _phextCoordinate);
 	Buffer * pBuf = MainFileManager.getBufferByID(id);
 	if (mainVisisble)
 	{

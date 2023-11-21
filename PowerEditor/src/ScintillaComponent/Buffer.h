@@ -91,7 +91,7 @@ public:
 
 	void addBufferReference(BufferID id, ScintillaEditView * identifer);	//called by Scintilla etc indirectly
 
-	BufferID loadFile(const TCHAR * filename, Document doc = static_cast<Document>(NULL), int encoding = -1, const TCHAR *backupFileName = nullptr, FILETIME fileNameTimestamp = {});	//ID == BUFFER_INVALID on failure. If Doc == NULL, a new file is created, otherwise data is loaded in given document
+	BufferID loadFile(phext::Coordinate start, const TCHAR * filename, Document doc = static_cast<Document>(NULL), int encoding = -1, const TCHAR *backupFileName = nullptr, FILETIME fileNameTimestamp = {});	//ID == BUFFER_INVALID on failure. If Doc == NULL, a new file is created, otherwise data is loaded in given document
 	BufferID newEmptyDocument();
 	// create an empty placeholder for a missing file when loading session
 	BufferID newPlaceholderDocument(const TCHAR * missingFilename, int whichOne, const wchar_t* userCreatedSessionName);
@@ -103,7 +103,7 @@ public:
 	BufferID getBufferFromDocument(Document doc);
 
 	void setLoadedBufferEncodingAndEol(Buffer* buf, const Utf8_16_Read& UnicodeConvertor, int encoding, EolType bkformat);
-	bool reloadBuffer(BufferID id);
+	bool reloadBuffer(BufferID id, phext::Coordinate start);
 	bool reloadBufferDeferred(BufferID id);
 	SavingStatus saveBuffer(BufferID id, const TCHAR* filename, bool isCopy = false);
 	bool backupCurrentBuffer();
@@ -141,7 +141,7 @@ private:
 
 	bool detectPhext(char* buf, size_t len);
 	int detectCodepage(char* buf, size_t len);
-	bool loadFileData(Document doc, int64_t fileSize, const TCHAR* filename, char* buffer, Utf8_16_Read* UnicodeConvertor, LoadedFileFormat& fileFormat);
+	bool loadFileData(Document doc, int64_t fileSize, const TCHAR* filename, char* buffer, Utf8_16_Read* UnicodeConvertor, LoadedFileFormat& fileFormat, phext::Coordinate start);
 	LangType detectLanguageFromTextBegining(const unsigned char *data, size_t dataLen);
 
 	Notepad_plus* _pNotepadPlus = nullptr;

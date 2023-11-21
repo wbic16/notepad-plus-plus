@@ -680,7 +680,7 @@ void FileManager::closeBuffer(BufferID id, ScintillaEditView * identifier)
 
 
 // backupFileName is sentinel of backup mode: if it's not NULL, then we use it (load it). Otherwise we use filename
-BufferID FileManager::loadFile(const TCHAR* filename, Document doc, int encoding, const TCHAR* backupFileName, FILETIME fileNameTimestamp)
+BufferID FileManager::loadFile(phext::Coordinate start, const TCHAR* filename, Document doc, int encoding, const TCHAR* backupFileName, FILETIME fileNameTimestamp)
 {
 	if (!filename)
 		return BUFFER_INVALID;
@@ -760,7 +760,7 @@ BufferID FileManager::loadFile(const TCHAR* filename, Document doc, int encoding
 	loadedFileFormat._eolFormat = EolType::unknown;
 	loadedFileFormat._language = L_TEXT;
 
-	bool res = loadFileData(doc, fileSize, backupFileName ? backupFileName : fullpath, data, &UnicodeConvertor, loadedFileFormat);
+	bool res = loadFileData(doc, fileSize, backupFileName ? backupFileName : fullpath, data, &UnicodeConvertor, loadedFileFormat, start);
 
 	delete[] data;
 
@@ -808,7 +808,7 @@ BufferID FileManager::loadFile(const TCHAR* filename, Document doc, int encoding
 }
 
 
-bool FileManager::reloadBuffer(BufferID id)
+bool FileManager::reloadBuffer(BufferID id, phext::Coordinate start)
 {
 	Buffer* buf = getBufferByID(id);
 	Document doc = buf->getDocument();
@@ -833,7 +833,7 @@ bool FileManager::reloadBuffer(BufferID id)
 	char* data = new char[blockSize + 8]; // +8 for incomplete multibyte char
 
 	buf->_canNotify = false;	//disable notify during file load, we don't want dirty status to be triggered
-	bool res = loadFileData(doc, fileSize, buf->getFullPathName(), data, &UnicodeConvertor, loadedFileFormat);
+	bool res = loadFileData(doc, fileSize, buf->getFullPathName(), data, &UnicodeConvertor, loadedFileFormat, start);
 	buf->_canNotify = true;
 
 	delete[] data;
@@ -1560,7 +1560,7 @@ LangType FileManager::detectLanguageFromTextBegining(const unsigned char *data, 
 	return L_TEXT;
 }
 
-bool FileManager::loadFileData(Document doc, int64_t fileSize, const TCHAR * filename, char* data, Utf8_16_Read * unicodeConvertor, LoadedFileFormat& fileFormat)
+bool FileManager::loadFileData(Document doc, int64_t fileSize, const TCHAR * filename, char* data, Utf8_16_Read * unicodeConvertor, LoadedFileFormat& fileFormat, phext::Coordinate start)
 {
 	FILE *fp = _wfopen(filename, TEXT("rb"));
 	if (!fp)
@@ -1686,15 +1686,15 @@ bool FileManager::loadFileData(Document doc, int64_t fileSize, const TCHAR * fil
 				if (fileFormat._phext)
 				{
 					_pscratchTilla->execute(SCI_SET_PHEXT_ENABLED, 1, 0);
-					_pscratchTilla->execute(SCI_SET_PHEXT_SCROLL, 1, 0);
-					_pscratchTilla->execute(SCI_SET_PHEXT_SECTION, 1, 0);
-					_pscratchTilla->execute(SCI_SET_PHEXT_CHAPTER, 1, 0);
-					_pscratchTilla->execute(SCI_SET_PHEXT_BOOK, 1, 0);
-					_pscratchTilla->execute(SCI_SET_PHEXT_VOLUME, 1, 0);
-					_pscratchTilla->execute(SCI_SET_PHEXT_COLLECTION, 1, 0);
-					_pscratchTilla->execute(SCI_SET_PHEXT_SERIES, 1, 0);
-					_pscratchTilla->execute(SCI_SET_PHEXT_SHELF, 1, 0);
-					_pscratchTilla->execute(SCI_SET_PHEXT_LIBRARY, 1, 0);
+					_pscratchTilla->execute(SCI_SET_PHEXT_SCROLL, start.ScrollID, 0);
+					_pscratchTilla->execute(SCI_SET_PHEXT_SECTION, start.SectionID, 0);
+					_pscratchTilla->execute(SCI_SET_PHEXT_CHAPTER, start.ChapterID, 0);
+					_pscratchTilla->execute(SCI_SET_PHEXT_BOOK, start.BookID, 0);
+					_pscratchTilla->execute(SCI_SET_PHEXT_VOLUME, start.VolumeID, 0);
+					_pscratchTilla->execute(SCI_SET_PHEXT_COLLECTION, start.CollectionID, 0);
+					_pscratchTilla->execute(SCI_SET_PHEXT_SERIES, start.SeriesID, 0);
+					_pscratchTilla->execute(SCI_SET_PHEXT_SHELF, start.ShelfID, 0);
+					_pscratchTilla->execute(SCI_SET_PHEXT_LIBRARY, start.LibraryID, 0);
 
 					lenConvert = unicodeConvertor->convert(data, lenFile);
 					_pscratchTilla->execute(SCI_APPEND_PHEXT, lenConvert, reinterpret_cast<LPARAM>(unicodeConvertor->getNewBuf()));

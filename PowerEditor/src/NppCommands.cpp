@@ -103,23 +103,60 @@ void Notepad_plus::phextIncrement(phext::Break type, bool add)
 	}
 
 	uint16_t phextID = static_cast<uint16_t>(_pEditView->execute(getRequest));
+	uint16_t nextID = phextID;
 	if (add)
 	{
 		if (phextID < phext::Coordinate::LIMIT)
 		{
-			_pEditView->execute(setRequest, static_cast<WPARAM>(phextID + 1));			
+			nextID = phextID + 1;
 		}
 	}
 	else
 	{
 		if (phextID > 1)
 		{
-			_pEditView->execute(setRequest, static_cast<WPARAM>(phextID - 1));
+			nextID = phextID - 1;
 		}
 	}
 
-	_pDocTab->redraw();
-	updateStatusBar();
+	if (nextID != phextID)
+	{
+		switch (type)
+		{
+		case phext::Break::LIBRARY:
+			_phextCoordinate.LibraryID = nextID;
+			break;
+		case phext::Break::SHELF:
+			_phextCoordinate.ShelfID = nextID;
+			break;
+		case phext::Break::SERIES:
+			_phextCoordinate.SeriesID = nextID;
+			break;
+		case phext::Break::COLLECTION:
+			_phextCoordinate.CollectionID = nextID;
+			break;
+		case phext::Break::VOLUME:
+			_phextCoordinate.VolumeID = nextID;
+			break;
+		case phext::Break::BOOK:
+			_phextCoordinate.BookID = nextID;
+			break;
+		case phext::Break::CHAPTER:
+			_phextCoordinate.ChapterID = nextID;
+			break;
+		case phext::Break::SECTION:
+			_phextCoordinate.SectionID = nextID;
+			break;
+		case phext::Break::SCROLL:
+		default:
+			_phextCoordinate.ScrollID = nextID;
+			break;
+		}
+
+		_pDocTab->redraw();
+		updateStatusBar();
+		fileReload();
+	}
 }
 
 void Notepad_plus::command(int id)

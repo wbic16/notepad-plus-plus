@@ -7070,74 +7070,73 @@ sptr_t Editor::WndProc(Message iMessage, uptr_t wParam, sptr_t lParam) {
 		return vs.lineHeight;
 
 	case Message::GetPhextEnabled:
-		return vs.phextEnabled;
-		break;
+		return pdoc->getPhextEnabled();
 
 	case Message::SetPhextEnabled:
-		vs.phextEnabled = wParam != 0;
+		pdoc->setPhextEnabled(wParam != 0);
 		break;
 
 	case Message::GetPhextScroll:
-		return vs.phextCoordinate.ScrollID;
+		return pdoc->Coordinate.ScrollID;
 
 	case Message::GetPhextSection:
-		return vs.phextCoordinate.SectionID;
+		return pdoc->Coordinate.SectionID;
 
 	case Message::GetPhextChapter:
-		return vs.phextCoordinate.ChapterID;
+		return pdoc->Coordinate.ChapterID;
 
 	case Message::GetPhextBook:
-		return vs.phextCoordinate.BookID;
+		return pdoc->Coordinate.BookID;
 	
 	case Message::GetPhextVolume:
-		return vs.phextCoordinate.VolumeID;
+		return pdoc->Coordinate.VolumeID;
 	
 	case Message::GetPhextCollection:
-		return vs.phextCoordinate.CollectionID;
+		return pdoc->Coordinate.CollectionID;
 
 	case Message::GetPhextSeries:
-		return vs.phextCoordinate.SeriesID;
+		return pdoc->Coordinate.SeriesID;
 
 	case Message::GetPhextShelf:
-		return vs.phextCoordinate.ShelfID;
+		return pdoc->Coordinate.ShelfID;
 
 	case Message::GetPhextLibrary:
-		return vs.phextCoordinate.LibraryID;
+		return pdoc->Coordinate.LibraryID;
 
 	case Message::SetPhextScroll:
-		vs.phextCoordinate.ScrollID = static_cast<uint16_t>(wParam);
+		pdoc->Coordinate.ScrollID = static_cast<uint16_t>(wParam);
 		break;
 
 	case Message::SetPhextSection:
-		vs.phextCoordinate.SectionID = static_cast<uint16_t>(wParam);
+		pdoc->Coordinate.SectionID = static_cast<uint16_t>(wParam);
 		break;
 
 	case Message::SetPhextChapter:
-		vs.phextCoordinate.ChapterID = static_cast<uint16_t>(wParam);
+		pdoc->Coordinate.ChapterID = static_cast<uint16_t>(wParam);
 		break;
 
 	case Message::SetPhextBook:
-		vs.phextCoordinate.BookID = static_cast<uint16_t>(wParam);
+		pdoc->Coordinate.BookID = static_cast<uint16_t>(wParam);
 		break;
 
 	case Message::SetPhextVolume:
-		vs.phextCoordinate.VolumeID = static_cast<uint16_t>(wParam);
+		pdoc->Coordinate.VolumeID = static_cast<uint16_t>(wParam);
 		break;
 
 	case Message::SetPhextCollection:
-		vs.phextCoordinate.CollectionID = static_cast<uint16_t>(wParam);
+		pdoc->Coordinate.CollectionID = static_cast<uint16_t>(wParam);
 		break;
 
 	case Message::SetPhextSeries:
-		vs.phextCoordinate.SeriesID = static_cast<uint16_t>(wParam);
+		pdoc->Coordinate.SeriesID = static_cast<uint16_t>(wParam);
 		break;
 
 	case Message::SetPhextShelf:
-		vs.phextCoordinate.ShelfID = static_cast<uint16_t>(wParam);
+		pdoc->Coordinate.ShelfID = static_cast<uint16_t>(wParam);
 		break;
 
 	case Message::SetPhextLibrary:
-		vs.phextCoordinate.LibraryID = static_cast<uint16_t>(wParam);
+		pdoc->Coordinate.LibraryID = static_cast<uint16_t>(wParam);
 		break;
 
 	case Message::SetEndAtLastLine:

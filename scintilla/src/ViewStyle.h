@@ -124,8 +124,6 @@ public:
 	bool indicatorsSetFore;
 	Scintilla::Technology technology;
 	int lineHeight;
-	bool phextEnabled = false;
-	phext::Coordinate phextCoordinate;
 	int lineOverlap;
 	XYPOSITION maxAscent;
 	XYPOSITION maxDescent;

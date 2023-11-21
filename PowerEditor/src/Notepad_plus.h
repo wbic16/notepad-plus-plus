@@ -264,6 +264,10 @@ public:
 
 	void refreshDarkMode(bool resetStyle = false);
 
+	phext::Coordinate phextCoordinate() const {
+		return _phextCoordinate;
+	}
+
 private:
 	Notepad_plus_Window* _pPublicInterface = nullptr;
     Window* _pMainWindow = nullptr;

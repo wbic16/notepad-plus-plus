@@ -2000,7 +2000,7 @@ bool Notepad_plus::replaceInFilelist(std::vector<generic_string> & fileNames)
 		BufferID id = MainFileManager.getBufferFromName(fileNames.at(i).c_str());
 		if (id == BUFFER_INVALID)
 		{
-			id = MainFileManager.loadFile(fileNames.at(i).c_str());
+			id = MainFileManager.loadFile(_phextCoordinate, fileNames.at(i).c_str());
 			closeBuf = true;
 		}
 
@@ -2104,7 +2104,7 @@ bool Notepad_plus::findInFinderFiles(FindersInfo *findInFolderInfo)
 		BufferID id = MainFileManager.getBufferFromName(fileNames.at(i).c_str());
 		if (id == BUFFER_INVALID)
 		{
-			id = MainFileManager.loadFile(fileNames.at(i).c_str());
+			id = MainFileManager.loadFile(_phextCoordinate, fileNames.at(i).c_str());
 			closeBuf = true;
 		}
 
@@ -2205,7 +2205,7 @@ bool Notepad_plus::findInFilelist(std::vector<generic_string> & fileNames)
 		BufferID id = MainFileManager.getBufferFromName(fileNames.at(i).c_str());
 		if (id == BUFFER_INVALID)
 		{
-			id = MainFileManager.loadFile(fileNames.at(i).c_str());
+			id = MainFileManager.loadFile(_phextCoordinate, fileNames.at(i).c_str());
 			closeBuf = true;
 		}
 
@@ -4326,7 +4326,7 @@ void Notepad_plus::updateStatusBar()
 	intptr_t curLN = _pEditView->getCurrentLineNumber();
 	intptr_t curCN = _pEditView->getCurrentColumnNumber();	
 
-	//if (_pEditView->isPhextEnabled())
+	if (_pEditView->isPhextEnabled())
 	{
 		const uint16_t scroll = _pEditView->getCurrentPhextScroll();
 		const uint16_t section = _pEditView->getCurrentPhextSection();
@@ -4352,13 +4352,13 @@ void Notepad_plus::updateStatusBar()
 			shelf,
 			library);
 	}
-	/*else
+	else
 	{
 		wsprintf(strLnColSel, TEXT("Ln :  %s   Col :  %s   %s"),
 			commafyInt(curLN + 1).c_str(),
 			commafyInt(curCN + 1).c_str(),
 			strSel);
-	}*/
+	}
 	_statusBar.setText(strLnColSel, STATUSBAR_CUR_POS);
 
 	_statusBar.setText(_pEditView->execute(SCI_GETOVERTYPE) ? TEXT("OVR") : TEXT("INS"), STATUSBAR_TYPING_MODE);
@@ -4936,7 +4936,7 @@ bool Notepad_plus::activateBuffer(BufferID id, int whichOne, bool forceApplyHili
 	bool reload = pBuf->getNeedReload();
 	if (reload)
 	{
-		MainFileManager.reloadBuffer(id);
+		MainFileManager.reloadBuffer(id, _phextCoordinate);
 		pBuf->setNeedReload(false);
 	}
 	if (whichOne == MAIN_VIEW)

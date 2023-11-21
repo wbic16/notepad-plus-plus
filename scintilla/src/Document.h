@@ -276,10 +276,21 @@ public:
 		}
 	};
 
+	phext::Coordinate Coordinate;
+
+	void setPhextEnabled(bool enabled)
+	{
+		_phextEnabled = enabled;
+	}
+
+	bool getPhextEnabled() const {
+		return _phextEnabled;
+	}
+
 private:
-	int refCount;
-	phext::Coordinate coordinate;
+	int refCount;	
 	DocumentOption _docOptions;
+	bool _phextEnabled = false;
 	using PhextCellScroll = std::shared_ptr<CellBuffer>;
 	using PhextCellSection = phext::MappedDimension<PhextCellScroll>;
 	using PhextCellChapter = phext::MappedDimension<PhextCellSection>;
@@ -293,21 +304,29 @@ private:
 
 	CellBuffer& cb() const
 	{
-		PhextCellScroll node = phext.get(coordinate.LibraryID).get(coordinate.ShelfID).get(coordinate.SeriesID).get(coordinate.CollectionID).get(coordinate.VolumeID).get(coordinate.BookID).get(coordinate.ChapterID).get(coordinate.SectionID).get(coordinate.ScrollID);
+		PhextCellScroll& node = phext.get(Coordinate.LibraryID).get(Coordinate.ShelfID).get(Coordinate.SeriesID).get(Coordinate.CollectionID).get(Coordinate.VolumeID).get(Coordinate.BookID).get(Coordinate.ChapterID).get(Coordinate.SectionID).get(Coordinate.ScrollID);
+		if (!node)
+		{
+			node = std::make_shared<CellBuffer>(!FlagSet(_docOptions, DocumentOption::StylesNone), FlagSet(_docOptions, DocumentOption::TextLarge));
+		}
 		return *node;
 	}
 	CellBuffer& cb()
 	{
-		PhextCellScroll node = phext.get(coordinate.LibraryID).get(coordinate.ShelfID).get(coordinate.SeriesID).get(coordinate.CollectionID).get(coordinate.VolumeID).get(coordinate.BookID).get(coordinate.ChapterID).get(coordinate.SectionID).get(coordinate.ScrollID);
+		PhextCellScroll& node = phext.get(Coordinate.LibraryID).get(Coordinate.ShelfID).get(Coordinate.SeriesID).get(Coordinate.CollectionID).get(Coordinate.VolumeID).get(Coordinate.BookID).get(Coordinate.ChapterID).get(Coordinate.SectionID).get(Coordinate.ScrollID);
+		if (!node)
+		{
+			node = std::make_shared<CellBuffer>(!FlagSet(_docOptions, DocumentOption::StylesNone), FlagSet(_docOptions, DocumentOption::TextLarge));
+		}
 		return *node;
 	}
 	PhextCellScroll& node() const
 	{
-		return phext.get(coordinate.LibraryID).get(coordinate.ShelfID).get(coordinate.SeriesID).get(coordinate.CollectionID).get(coordinate.VolumeID).get(coordinate.BookID).get(coordinate.ChapterID).get(coordinate.SectionID).get(coordinate.ScrollID);
+		return phext.get(Coordinate.LibraryID).get(Coordinate.ShelfID).get(Coordinate.SeriesID).get(Coordinate.CollectionID).get(Coordinate.VolumeID).get(Coordinate.BookID).get(Coordinate.ChapterID).get(Coordinate.SectionID).get(Coordinate.ScrollID);
 	}
 	PhextCellScroll& node()
 	{
-		return phext.get(coordinate.LibraryID).get(coordinate.ShelfID).get(coordinate.SeriesID).get(coordinate.CollectionID).get(coordinate.VolumeID).get(coordinate.BookID).get(coordinate.ChapterID).get(coordinate.SectionID).get(coordinate.ScrollID);
+		return phext.get(Coordinate.LibraryID).get(Coordinate.ShelfID).get(Coordinate.SeriesID).get(Coordinate.CollectionID).get(Coordinate.VolumeID).get(Coordinate.BookID).get(Coordinate.ChapterID).get(Coordinate.SectionID).get(Coordinate.ScrollID);
 	}
 	mutable PhextCellPhext phext;
 	CharClassify charClass;
