@@ -188,7 +188,7 @@ bool isCharSingleQuote(__inout wchar_t const c)
     else return false;
 }
 
-void ScintillaEditView::init(HINSTANCE hInst, HWND hPere)
+void ScintillaEditView::init(HINSTANCE hInst, HWND hPere, int editor)
 {
 	if (!_SciInit)
 	{
@@ -199,13 +199,28 @@ void ScintillaEditView::init(HINSTANCE hInst, HWND hPere)
 		_SciInit = true;
 	}
 
+	RECT rcClient;
+	GetWindowRect(hPere, &rcClient);
+
+	int hx = 0;
+	int hy = 300;
+	int wx = 100;
+	int wy = 100;
+	if (editor != 0)
+	{
+		hx = 10+rcClient.left;
+		hy = rcClient.top + 400*(editor - 1);
+		wx = 800;
+		wy = 200;
+	}
+
 	Window::init(hInst, hPere);
 	_hSelf = ::CreateWindowEx(
 					0,\
 					TEXT("Scintilla"),\
 					TEXT("Notepad++"),\
 					WS_CHILD | WS_VSCROLL | WS_HSCROLL | WS_CLIPCHILDREN | WS_EX_RTLREADING,\
-					0, 0, 100, 100,\
+					hx, hy, wx, wy,\
 					_hParent,\
 					NULL,\
 					_hInst,\

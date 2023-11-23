@@ -191,7 +191,65 @@ Notepad_plus::~Notepad_plus()
 	delete _pFileBrowser;
 }
 
+void Notepad_plus::init(ScintillaEditView& view, const NppViewParams& nvp)
+{
+	view.init(_pPublicInterface->getHinst(), nvp.hwnd, nvp.editor);
+	if (nvp.display)
+	{
+		view.display();
+	}
+	const ScintillaViewParams& svp = nvp.svp;
 
+	view.showMargin(ScintillaEditView::_SC_MARGE_LINENUMBER, svp._lineNumberMarginShow);
+	view.showMargin(ScintillaEditView::_SC_MARGE_SYMBOL, svp._bookMarkMarginShow);
+	view.showIndentGuideLine(svp._indentGuideLineShow);
+	view.setMakerStyle(svp._folderStyle);
+	view.defineDocType(view.getCurrentBuffer()->getLangType());
+	view.setWrapMode(svp._lineWrapMethod);
+	view.execute(SCI_SETENDATLASTLINE, !svp._scrollBeyondLastLine);
+
+	if (svp._doSmoothFont)
+	{
+		view.execute(SCI_SETFONTQUALITY, SC_EFF_QUALITY_LCD_OPTIMIZED);
+	}
+
+	view.setBorderEdge(svp._showBorderEdge);
+	view.execute(SCI_SETCARETLINEVISIBLEALWAYS, true);
+	view.wrap(svp._doWrap);
+	::SendMessage(nvp.hwnd, NPPM_INTERNAL_EDGEMULTISETSIZE, 0, 0);
+	view.showEOL(svp._eolShow);
+	view.showWSAndTab(svp._whiteSpaceShow);
+	view.showWrapSymbol(svp._wrapSymbolShow);
+	view.performGlobalStyles();	
+	view.execute(SCI_SETZOOM, nvp.display ? svp._zoom : svp._zoom2);
+	view.execute(SCI_SETMULTIPLESELECTION, true);
+	view.execute(SCI_SETADDITIONALSELECTIONTYPING, true);
+	int virtualSpaceOptions = SCVS_RECTANGULARSELECTION;
+	if (svp._virtualSpace)
+	{
+		virtualSpaceOptions |= SCVS_USERACCESSIBLE | SCVS_NOWRAPLINESTART;
+	}
+	view.execute(SCI_SETVIRTUALSPACEOPTIONS, virtualSpaceOptions);
+
+	// Turn multi-paste on
+	view.execute(SCI_SETMULTIPASTE, SC_MULTIPASTE_EACH);
+
+	// Turn auto-completion into each multi-select on
+	view.execute(SCI_AUTOCSETMULTI, SC_MULTIAUTOC_EACH);
+
+	// allow user to start selecting as a stream block, then switch to a column block by adding Alt keypress
+	view.execute(SCI_SETMOUSESELECTIONRECTANGULARSWITCH, true);
+
+	// Let Scintilla deal with some of the folding functionality
+	view.execute(SCI_SETAUTOMATICFOLD, SC_AUTOMATICFOLD_SHOW | SC_AUTOMATICFOLD_CHANGE);
+
+	// Set padding info
+	view.execute(SCI_SETMARGINLEFT, 0, svp._paddingLeft);
+	view.execute(SCI_SETMARGINRIGHT, 0, svp._paddingRight);
+
+	// Improvement of the switching into the wrapped long line document
+	view.execute(SCI_STYLESETCHECKMONOSPACED, STYLE_DEFAULT, true);
+}
 
 LRESULT Notepad_plus::init(HWND hwnd)
 {
@@ -211,19 +269,20 @@ LRESULT Notepad_plus::init(HWND hwnd)
 	_pNonDocTab = &_subDocTab;
 	_pNonEditView = &_subEditView;
 
-	_mainEditView.init(_pPublicInterface->getHinst(), hwnd);
-	_subEditView.init(_pPublicInterface->getHinst(), hwnd);
-
 	_fileEditView.init(_pPublicInterface->getHinst(), hwnd);
 	MainFileManager.init(this, &_fileEditView); //get it up and running asap.
 
 	nppParam.setFontList(hwnd);
 
-
 	_mainWindowStatus = WindowMainActive;
 	_activeView = MAIN_VIEW;
 
-	const ScintillaViewParams & svp = nppParam.getSVP();
+	const ScintillaViewParams& svp = nppParam.getSVP();
+
+	init(_mainEditView, { hwnd, svp, true, 0 });
+	init(_subEditView, { hwnd, svp, false, 0 });
+	init(_phextBefore, { hwnd, svp, true, 1 });
+	init(_phextAfter, { hwnd, svp, true, 2 });
 
 	int tabBarStatus = nppGUI._tabStatus;
 
@@ -269,115 +328,19 @@ LRESULT Notepad_plus::init(HWND hwnd)
 	_mainDocTab.init(_pPublicInterface->getHinst(), hwnd, &_mainEditView, pIconListVector, indexDocTabIcon);
 	_subDocTab.init(_pPublicInterface->getHinst(), hwnd, &_subEditView, pIconListVector, indexDocTabIcon);
 
-	_mainEditView.display();
-
 	_invisibleEditView.init(_pPublicInterface->getHinst(), hwnd);
 	_invisibleEditView.execute(SCI_SETUNDOCOLLECTION);
 	_invisibleEditView.execute(SCI_EMPTYUNDOBUFFER);
 	_invisibleEditView.wrap(false); // Make sure no slow down
 
-	// Configuration of 2 scintilla views
-	_mainEditView.showMargin(ScintillaEditView::_SC_MARGE_LINENUMBER, svp._lineNumberMarginShow);
-	_subEditView.showMargin(ScintillaEditView::_SC_MARGE_LINENUMBER, svp._lineNumberMarginShow);
-	_mainEditView.showMargin(ScintillaEditView::_SC_MARGE_SYMBOL, svp._bookMarkMarginShow);
-	_subEditView.showMargin(ScintillaEditView::_SC_MARGE_SYMBOL, svp._bookMarkMarginShow);
-
-	_mainEditView.showIndentGuideLine(svp._indentGuideLineShow);
-	_subEditView.showIndentGuideLine(svp._indentGuideLineShow);
-
 	::SendMessage(hwnd, NPPM_INTERNAL_SETCARETWIDTH, 0, 0);
 	::SendMessage(hwnd, NPPM_INTERNAL_SETCARETBLINKRATE, 0, 0);
+	
+	_zoomOriginalValue = _pEditView->execute(SCI_GETZOOM);
 
 	_configStyleDlg.init(_pPublicInterface->getHinst(), hwnd);
 	_preference.init(_pPublicInterface->getHinst(), hwnd);
 	_pluginsAdminDlg.init(_pPublicInterface->getHinst(), hwnd);
-
-	//Marker Margin config
-	_mainEditView.setMakerStyle(svp._folderStyle);
-	_subEditView.setMakerStyle(svp._folderStyle);
-	_mainEditView.defineDocType(_mainEditView.getCurrentBuffer()->getLangType());
-	_subEditView.defineDocType(_subEditView.getCurrentBuffer()->getLangType());
-
-	//Line wrap method
-	_mainEditView.setWrapMode(svp._lineWrapMethod);
-	_subEditView.setWrapMode(svp._lineWrapMethod);
-
-	_mainEditView.execute(SCI_SETENDATLASTLINE, !svp._scrollBeyondLastLine);
-	_subEditView.execute(SCI_SETENDATLASTLINE, !svp._scrollBeyondLastLine);
-
-	if (svp._doSmoothFont)
-	{
-		_mainEditView.execute(SCI_SETFONTQUALITY, SC_EFF_QUALITY_LCD_OPTIMIZED);
-		_subEditView.execute(SCI_SETFONTQUALITY, SC_EFF_QUALITY_LCD_OPTIMIZED);
-	}
-
-	_mainEditView.setBorderEdge(svp._showBorderEdge);
-	_subEditView.setBorderEdge(svp._showBorderEdge);
-
-	_mainEditView.execute(SCI_SETCARETLINEVISIBLEALWAYS, true);
-	_subEditView.execute(SCI_SETCARETLINEVISIBLEALWAYS, true);
-
-	_mainEditView.wrap(svp._doWrap);
-	_subEditView.wrap(svp._doWrap);
-
-	::SendMessage(hwnd, NPPM_INTERNAL_EDGEMULTISETSIZE, 0, 0);
-
-	_mainEditView.showEOL(svp._eolShow);
-	_subEditView.showEOL(svp._eolShow);
-
-	_mainEditView.showWSAndTab(svp._whiteSpaceShow);
-	_subEditView.showWSAndTab(svp._whiteSpaceShow);
-
-	_mainEditView.showWrapSymbol(svp._wrapSymbolShow);
-	_subEditView.showWrapSymbol(svp._wrapSymbolShow);
-
-	_mainEditView.performGlobalStyles();
-	_subEditView.performGlobalStyles();
-
-	_zoomOriginalValue = _pEditView->execute(SCI_GETZOOM);
-	_mainEditView.execute(SCI_SETZOOM, svp._zoom);
-	_subEditView.execute(SCI_SETZOOM, svp._zoom2);
-
-	_mainEditView.execute(SCI_SETMULTIPLESELECTION, true);
-	_subEditView.execute(SCI_SETMULTIPLESELECTION, true);
-
-	// Make backspace or delete work with multiple selections
-	_mainEditView.execute(SCI_SETADDITIONALSELECTIONTYPING, true);
-	_subEditView.execute(SCI_SETADDITIONALSELECTIONTYPING, true);
-
-	// Turn virtual space on
-	int virtualSpaceOptions = SCVS_RECTANGULARSELECTION;
-	if(svp._virtualSpace)
-		virtualSpaceOptions |= SCVS_USERACCESSIBLE | SCVS_NOWRAPLINESTART;
-
-	_mainEditView.execute(SCI_SETVIRTUALSPACEOPTIONS, virtualSpaceOptions);
-	_subEditView.execute(SCI_SETVIRTUALSPACEOPTIONS, virtualSpaceOptions);
-
-	// Turn multi-paste on
-	_mainEditView.execute(SCI_SETMULTIPASTE, SC_MULTIPASTE_EACH);
-	_subEditView.execute(SCI_SETMULTIPASTE, SC_MULTIPASTE_EACH);
-
-	// Turn auto-completion into each multi-select on
-	_mainEditView.execute(SCI_AUTOCSETMULTI, SC_MULTIAUTOC_EACH);
-	_subEditView.execute(SCI_AUTOCSETMULTI, SC_MULTIAUTOC_EACH);
-
-	// allow user to start selecting as a stream block, then switch to a column block by adding Alt keypress
-	_mainEditView.execute(SCI_SETMOUSESELECTIONRECTANGULARSWITCH, true);
-	_subEditView.execute(SCI_SETMOUSESELECTIONRECTANGULARSWITCH, true);
-
-	// Let Scintilla deal with some of the folding functionality
-	_mainEditView.execute(SCI_SETAUTOMATICFOLD, SC_AUTOMATICFOLD_SHOW | SC_AUTOMATICFOLD_CHANGE);
-	_subEditView.execute(SCI_SETAUTOMATICFOLD, SC_AUTOMATICFOLD_SHOW | SC_AUTOMATICFOLD_CHANGE);
-
-	// Set padding info
-	_mainEditView.execute(SCI_SETMARGINLEFT, 0, svp._paddingLeft);
-	_mainEditView.execute(SCI_SETMARGINRIGHT, 0, svp._paddingRight);
-	_subEditView.execute(SCI_SETMARGINLEFT, 0, svp._paddingLeft);
-	_subEditView.execute(SCI_SETMARGINRIGHT, 0, svp._paddingRight);
-
-	// Improvement of the switching into the wrapped long line document
-	_mainEditView.execute(SCI_STYLESETCHECKMONOSPACED, STYLE_DEFAULT, true);
-	_subEditView.execute(SCI_STYLESETCHECKMONOSPACED, STYLE_DEFAULT, true);
 
 	TabBarPlus::doDragNDrop(true);
 
@@ -390,11 +353,11 @@ LRESULT Notepad_plus::init(HWND hwnd)
 
 	int tabDpiDynamicalHeight = nppParam._dpiManager.scaleY(_toReduceTabBar ? g_TabHeight : g_TabHeightLarge);
 	int tabDpiDynamicalWidth = nppParam._dpiManager.scaleX(g_TabWidth);
+
 	TabCtrl_SetItemSize(_mainDocTab.getHSelf(), tabDpiDynamicalWidth, tabDpiDynamicalHeight);
 	TabCtrl_SetItemSize(_subDocTab.getHSelf(), tabDpiDynamicalWidth, tabDpiDynamicalHeight);
 
 	_mainDocTab.display();
-
 
 	TabBarPlus::doDragNDrop((tabBarStatus & TAB_DRAGNDROP) != 0);
 	TabBarPlus::setDrawTopBar((tabBarStatus & TAB_DRAWTOPBAR) != 0);
@@ -453,6 +416,8 @@ LRESULT Notepad_plus::init(HWND hwnd)
 	nppData._nppHandle = hwnd;
 	nppData._scintillaMainHandle = _mainEditView.getHSelf();
 	nppData._scintillaSecondHandle = _subEditView.getHSelf();
+	nppData._scintillaPhextBefore = _phextBefore.getHSelf();
+	nppData._scintillaPhextAfter = _phextAfter.getHSelf();
 
 	_scintillaCtrls4Plugins.init(_pPublicInterface->getHinst(), hwnd);
 	_pluginsManager.init(nppData);
@@ -874,8 +839,12 @@ LRESULT Notepad_plus::init(HWND hwnd)
 	//Load initial docs into doctab
 	loadBufferIntoView(_mainEditView.getCurrentBufferID(), MAIN_VIEW);
 	loadBufferIntoView(_subEditView.getCurrentBufferID(), SUB_VIEW);
+	loadBufferIntoView(_phextBefore.getCurrentBufferID(), PHEXT_BEFORE);
+	loadBufferIntoView(_phextAfter.getCurrentBufferID(), PHEXT_AFTER);
 	activateBuffer(_mainEditView.getCurrentBufferID(), MAIN_VIEW);
 	activateBuffer(_subEditView.getCurrentBufferID(), SUB_VIEW);
+	activateBuffer(_phextBefore.getCurrentBufferID(), PHEXT_BEFORE);
+	activateBuffer(_phextAfter.getCurrentBufferID(), PHEXT_AFTER);
 
 	_mainEditView.getFocus();
 
@@ -902,16 +871,15 @@ void Notepad_plus::killAllChildren()
 
     _mainDocTab.destroy();
     _subDocTab.destroy();
-
-	_mainEditView.destroy();
+    _mainEditView.destroy();
     _subEditView.destroy();
-	_invisibleEditView.destroy();
-
+	 _phextBefore.destroy();
+	 _phextAfter.destroy();
+    _invisibleEditView.destroy();
     _subSplitter.destroy();
     _statusBar.destroy();
-
-	_scintillaCtrls4Plugins.destroy();
-	_dockingManager.destroy();
+	 _scintillaCtrls4Plugins.destroy();
+	 _dockingManager.destroy();
 }
 
 bool Notepad_plus::saveGUIParams()

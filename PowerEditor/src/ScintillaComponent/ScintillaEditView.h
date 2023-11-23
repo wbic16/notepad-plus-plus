@@ -337,7 +337,7 @@ public:
 		_pScintillaFunc = NULL;
 	};
 
-	virtual void init(HINSTANCE hInst, HWND hPere);
+	virtual void init(HINSTANCE hInst, HWND hPere, int editor = 0);
 
 	LRESULT execute(UINT Msg, WPARAM wParam=0, LPARAM lParam=0) const {
 		try {
