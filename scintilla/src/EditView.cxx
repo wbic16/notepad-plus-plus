@@ -399,7 +399,10 @@ void EditView::LayoutLine(const EditModel &model, Surface *surface, const ViewSt
 	if (!ll)
 		return;
 	const Sci::Line line = ll->LineNumber();
-	PLATFORM_ASSERT(line < model.pdoc->LinesTotal());
+	const Sci::Line max = model.pdoc->LinesTotal();
+	if (line >= max)
+		return;
+	// phext makes this possible: PLATFORM_ASSERT(line < max);
 	PLATFORM_ASSERT(ll->chars);
 	const Sci::Position posLineStart = model.pdoc->LineStart(line);
 	Sci::Position posLineEnd = model.pdoc->LineStart(line + 1);

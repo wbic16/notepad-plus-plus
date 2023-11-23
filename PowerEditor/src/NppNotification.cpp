@@ -366,9 +366,52 @@ BOOL Notepad_plus::notify(SCNotification *notification)
 				LPNMMOUSE lpnm = (LPNMMOUSE)notification;
 				if (lpnm->dwItemSpec == DWORD(STATUSBAR_TYPING_MODE))
 				{
-					bool isOverTypeMode = (_pEditView->execute(SCI_GETOVERTYPE) != 0);
-					_pEditView->execute(SCI_SETOVERTYPE, !isOverTypeMode);
-					_statusBar.setText((_pEditView->execute(SCI_GETOVERTYPE))?TEXT("OVR"):TEXT("INS"), STATUSBAR_TYPING_MODE);
+					if (_pEditView->isPhextEnabled())
+					{
+						phext::Break prior = static_cast<phext::Break>(_pEditView->execute(SCI_GET_PHEXT_ENABLED));
+						phext::Break next = prior;
+						switch (prior)
+						{
+						case phext::Break::SCROLL:
+							next = phext::Break::SECTION;
+							break;
+						case phext::Break::SECTION:
+							next = phext::Break::CHAPTER;
+							break;
+						case phext::Break::CHAPTER:
+							next = phext::Break::BOOK;
+							break;
+						case phext::Break::BOOK:
+							next = phext::Break::VOLUME;
+							break;
+						case phext::Break::VOLUME:
+							next = phext::Break::COLLECTION;
+							break;
+						case phext::Break::COLLECTION:
+							next = phext::Break::SERIES;
+							break;
+						case phext::Break::SERIES:
+							next = phext::Break::SHELF;
+							break;
+						case phext::Break::SHELF:
+							next = phext::Break::LIBRARY;
+							break;
+						case phext::Break::LIBRARY:
+							next = phext::Break::LINE;
+							break;
+						default:
+							next = phext::Break::SCROLL;
+							break;
+						}
+
+						_pEditView->execute(SCI_SET_PHEXT_ENABLED, next, 0);
+					}
+					else
+					{
+						bool isOverTypeMode = (_pEditView->execute(SCI_GETOVERTYPE) != 0);
+						_pEditView->execute(SCI_SETOVERTYPE, !isOverTypeMode);
+					}
+					updateStatusBar();
 				}
 			}
 			else if (notification->nmhdr.hwndFrom == _mainDocTab.getHSelf() && _activeView == SUB_VIEW)
@@ -530,7 +573,17 @@ BOOL Notepad_plus::notify(SCNotification *notification)
 					// IMPORTANT: If any submenu entry is added/moved/removed, you have to change the value of tabCmSubMenuEntryPos[] in localization.cpp file
 					
 					itemUnitArray.push_back(MenuItemUnit(IDM_FILE_CLOSE, TEXT("Close")));
-					itemUnitArray.push_back(MenuItemUnit(0, NULL));
+					itemUnitArray.push_back(MenuItemUnit(0, NULL, TEXT("Phext")));
+					itemUnitArray.push_back(MenuItemUnit(IDM_SETTING_PHEXT_ENTER_IS_RETURN, TEXT("Enter -> Return"), TEXT("Phext")));
+					itemUnitArray.push_back(MenuItemUnit(IDM_SETTING_PHEXT_ENTER_IS_SCROLL, TEXT("Enter -> Scroll"), TEXT("Phext")));
+					itemUnitArray.push_back(MenuItemUnit(IDM_SETTING_PHEXT_ENTER_IS_SECTION, TEXT("Enter -> Section"), TEXT("Phext")));
+					itemUnitArray.push_back(MenuItemUnit(IDM_SETTING_PHEXT_ENTER_IS_CHAPTER, TEXT("Enter -> Chapter"), TEXT("Phext")));
+					itemUnitArray.push_back(MenuItemUnit(IDM_SETTING_PHEXT_ENTER_IS_BOOK, TEXT("Enter -> Book"), TEXT("Phext")));
+					itemUnitArray.push_back(MenuItemUnit(IDM_SETTING_PHEXT_ENTER_IS_VOLUME, TEXT("Enter -> Volume"), TEXT("Phext")));
+					itemUnitArray.push_back(MenuItemUnit(IDM_SETTING_PHEXT_ENTER_IS_COLLECTION, TEXT("Enter -> Collection"), TEXT("Phext")));
+					itemUnitArray.push_back(MenuItemUnit(IDM_SETTING_PHEXT_ENTER_IS_SERIES, TEXT("Enter -> Series"), TEXT("Phext")));
+					itemUnitArray.push_back(MenuItemUnit(IDM_SETTING_PHEXT_ENTER_IS_SHELF, TEXT("Enter -> Shelf"), TEXT("Phext")));
+					itemUnitArray.push_back(MenuItemUnit(IDM_SETTING_PHEXT_ENTER_IS_LIBRARY, TEXT("Enter -> Library"), TEXT("Phext")));					
 					itemUnitArray.push_back(MenuItemUnit(IDM_PHEXT_SCROLL_UP, TEXT("Phext Scroll Up"), TEXT("Phext")));
 					itemUnitArray.push_back(MenuItemUnit(IDM_PHEXT_SCROLL_DOWN, TEXT("Phext Scroll Down"), TEXT("Phext")));
 					itemUnitArray.push_back(MenuItemUnit(IDM_PHEXT_SECTION_UP, TEXT("Phext Section Up"), TEXT("Phext")));

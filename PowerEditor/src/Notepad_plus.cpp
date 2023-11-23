@@ -429,10 +429,10 @@ LRESULT Notepad_plus::init(HWND hwnd)
 	bool willBeShown = nppGUI._statusBarShow;
 	_statusBar.init(_pPublicInterface->getHinst(), hwnd, 6);
 	_statusBar.setPartWidth(STATUSBAR_DOC_SIZE, nppParam._dpiManager.scaleX(220));
-	_statusBar.setPartWidth(STATUSBAR_CUR_POS, nppParam._dpiManager.scaleX(460)); // expanded due to phext \o/
+	_statusBar.setPartWidth(STATUSBAR_CUR_POS, nppParam._dpiManager.scaleX(460)); // expanded due to phext! \o/
 	_statusBar.setPartWidth(STATUSBAR_EOF_FORMAT, nppParam._dpiManager.scaleX(110));
 	_statusBar.setPartWidth(STATUSBAR_UNICODE_TYPE, nppParam._dpiManager.scaleX(120));
-	_statusBar.setPartWidth(STATUSBAR_TYPING_MODE, nppParam._dpiManager.scaleX(30));
+	_statusBar.setPartWidth(STATUSBAR_TYPING_MODE, nppParam._dpiManager.scaleX(50)); // expanded due to phext! \o/
 	_statusBar.display(willBeShown);
 
 	_pMainWindow = &_mainDocTab;
@@ -4361,7 +4361,49 @@ void Notepad_plus::updateStatusBar()
 	}
 	_statusBar.setText(strLnColSel, STATUSBAR_CUR_POS);
 
-	_statusBar.setText(_pEditView->execute(SCI_GETOVERTYPE) ? TEXT("OVR") : TEXT("INS"), STATUSBAR_TYPING_MODE);
+	phext::Break dimensionBreakType = static_cast<phext::Break>(_pEditView->execute(SCI_GET_PHEXT_ENABLED));
+	const bool overwriting = _pEditView->execute(SCI_GETOVERTYPE);
+	const TCHAR* indicator = nullptr;
+	switch (dimensionBreakType)
+	{
+	case phext::Break::SCROLL:
+		indicator = overwriting ? TEXT("OVR-SC") : TEXT("INS-SC");
+		break;
+	case phext::Break::SECTION:
+		indicator = overwriting ? TEXT("OVR-SN") : TEXT("INS-SN");
+		break;
+	case phext::Break::CHAPTER:
+		indicator = overwriting ? TEXT("OVR-CH") : TEXT("INS-CH");
+		break;
+	case phext::Break::BOOK:
+		indicator = overwriting ? TEXT("OVR-BK") : TEXT("INS-BK");
+		break;
+	case phext::Break::VOLUME:
+		indicator = overwriting ? TEXT("OVR-VM") : TEXT("INS-VM");
+		break;
+	case phext::Break::COLLECTION:
+		indicator = overwriting ? TEXT("OVR-CN") : TEXT("INS-CN");
+		break;
+	case phext::Break::SERIES:
+		indicator = overwriting ? TEXT("OVR-SR") : TEXT("INS-SR");
+		break;
+	case phext::Break::SHELF:
+		indicator = overwriting ? TEXT("OVR-SF") : TEXT("INS-SF");
+		break;
+	case phext::Break::LIBRARY:
+		indicator = overwriting ? TEXT("OVR-LB") : TEXT("INS-LB");
+		break;
+	case phext::Break::STRING:
+	case phext::Break::LINE:
+	default:
+		indicator = overwriting ? TEXT("OVR") : TEXT("INS");
+		break;
+	}
+
+	if (indicator)
+	{
+		_statusBar.setText(indicator, STATUSBAR_TYPING_MODE);
+	}
 	
 	if (_goToLineDlg.isCreated() && _goToLineDlg.isVisible())
 	{

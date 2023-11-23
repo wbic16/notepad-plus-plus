@@ -712,6 +712,7 @@ typedef sptr_t (*SciFnDirectStatus)(sptr_t ptr, unsigned int iMessage, uptr_t wP
 #define SCI_PERFORM_PHEXT_SHELF_BREAK 6027
 #define SCI_PERFORM_PHEXT_LIBRARY_BREAK 6028
 #define SCI_APPEND_PHEXT 6029
+#define SCI_RETRIEVE_PHEXT 6030
 #define SC_PHASES_ONE 0
 #define SC_PHASES_TWO 1
 #define SC_PHASES_MULTIPLE 2

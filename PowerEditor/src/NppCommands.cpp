@@ -3342,56 +3342,46 @@ void Notepad_plus::command(int id)
 			shortcutMapper.destroy();
 			break;
 		}
-		case IDM_SETTING_PHEXT_ENTER_IS_RETURN:
-		{
+		case IDM_SETTING_PHEXT_ENTER_IS_RETURN:		
 			_phextBreakType = phext::Break::LINE;
+			_pEditView->execute(SCI_SET_PHEXT_ENABLED, _phextBreakType, 0);
 			break;
-		}
-		case IDM_SETTING_PHEXT_ENTER_IS_SCROLL:
-		{
+		case IDM_SETTING_PHEXT_ENTER_IS_SCROLL:		
 			_phextBreakType = phext::Break::SCROLL;
+			_pEditView->execute(SCI_SET_PHEXT_ENABLED, _phextBreakType, 0);
 			break;
-		}
 		case IDM_SETTING_PHEXT_ENTER_IS_SECTION:
-		{
 			_phextBreakType = phext::Break::SECTION;
+			_pEditView->execute(SCI_SET_PHEXT_ENABLED, _phextBreakType, 0);
 			break;
-		}
 		case IDM_SETTING_PHEXT_ENTER_IS_CHAPTER:
-		{
 			_phextBreakType = phext::Break::CHAPTER;
+			_pEditView->execute(SCI_SET_PHEXT_ENABLED, _phextBreakType, 0);
 			break;
-		}
 		case IDM_SETTING_PHEXT_ENTER_IS_BOOK:
-		{
 			_phextBreakType = phext::Break::BOOK;
+			_pEditView->execute(SCI_SET_PHEXT_ENABLED, _phextBreakType, 0);
 			break;
-		}
 		case IDM_SETTING_PHEXT_ENTER_IS_VOLUME:
-		{
 			_phextBreakType = phext::Break::VOLUME;
+			_pEditView->execute(SCI_SET_PHEXT_ENABLED, _phextBreakType, 0);
 			break;
-		}
 		case IDM_SETTING_PHEXT_ENTER_IS_COLLECTION:
-		{
 			_phextBreakType = phext::Break::COLLECTION;
+			_pEditView->execute(SCI_SET_PHEXT_ENABLED, _phextBreakType, 0);
 			break;
-		}
 		case IDM_SETTING_PHEXT_ENTER_IS_SERIES:
-		{
 			_phextBreakType = phext::Break::SERIES;
+			_pEditView->execute(SCI_SET_PHEXT_ENABLED, _phextBreakType, 0);
 			break;
-		}
 		case IDM_SETTING_PHEXT_ENTER_IS_SHELF:
-		{
 			_phextBreakType = phext::Break::SHELF;
+			_pEditView->execute(SCI_SET_PHEXT_ENABLED, _phextBreakType, 0);
 			break;
-		}
 		case IDM_SETTING_PHEXT_ENTER_IS_LIBRARY:
-		{
 			_phextBreakType = phext::Break::LIBRARY;
+			_pEditView->execute(SCI_SET_PHEXT_ENABLED, _phextBreakType, 0);
 			break;
-		}
 		case IDM_SETTING_PREFERENCE:
 		{
 			bool isFirstTime = !_preference.isCreated();

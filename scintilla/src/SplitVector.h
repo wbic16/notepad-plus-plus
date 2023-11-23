@@ -231,7 +231,11 @@ public:
 
 	/// Insert text into the buffer from an array.
 	void InsertFromArray(ptrdiff_t positionToInsert, const T s[], ptrdiff_t positionFrom, ptrdiff_t insertLength) {
-		PLATFORM_ASSERT((positionToInsert >= 0) && (positionToInsert <= lengthBody));
+		PLATFORM_ASSERT((positionToInsert >= 0));
+		if (positionToInsert > lengthBody)
+		{
+			// due to phext - do nothing - handled below -----v
+		}
 		if (insertLength > 0) {
 			if ((positionToInsert < 0) || (positionToInsert > lengthBody)) {
 				return;

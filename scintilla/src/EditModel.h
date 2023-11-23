@@ -26,6 +26,7 @@ public:
 	bool inOverstrike;
 	int xOffset;		///< Horizontal scrolled amount in pixels
 	bool trackLineWidth;
+	phext::Break dimensionBreakType{ phext::Break::LINE };
 
 	SpecialRepresentations reprs;
 	Caret caret;

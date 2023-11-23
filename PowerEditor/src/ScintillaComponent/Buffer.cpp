@@ -1193,38 +1193,49 @@ SavingStatus FileManager::saveBuffer(BufferID id, const TCHAR* filename, bool is
 	if (UnicodeConvertor.openFile(fullpath))
 	{
 		_pscratchTilla->execute(SCI_SETDOCPOINTER, 0, buffer->_doc);	//generate new document
-
-		size_t lengthDoc = _pscratchTilla->getCurrentDocLen();
-		char* buf = (char*)_pscratchTilla->execute(SCI_GETCHARACTERPOINTER);	//to get characters directly from Scintilla buffer
 		boolean isWrittenSuccessful = false;
 
-		if (encoding == -1) //no special encoding; can be handled directly by Utf8_16_Write
+		char* buf = (char*)_pscratchTilla->execute(SCI_RETRIEVE_PHEXT);
+		size_t lengthDoc = 0;
+		if (buf != nullptr)
 		{
+			// prefer phext encoding
+			lengthDoc = strlen(buf);
 			isWrittenSuccessful = UnicodeConvertor.writeFile(buf, lengthDoc);
-			if (lengthDoc == 0)
-				isWrittenSuccessful = true;
 		}
 		else
 		{
-			WcharMbcsConvertor& wmc = WcharMbcsConvertor::getInstance();
-			if (lengthDoc == 0)
+			lengthDoc = _pscratchTilla->getCurrentDocLen();
+			buf = (char*)_pscratchTilla->execute(SCI_GETCHARACTERPOINTER);	//to get characters directly from Scintilla buffer			
+
+			if (encoding == -1) //no special encoding; can be handled directly by Utf8_16_Write
 			{
-				isWrittenSuccessful = UnicodeConvertor.writeFile(buf, 0);
+				isWrittenSuccessful = UnicodeConvertor.writeFile(buf, lengthDoc);
+				if (lengthDoc == 0)
+					isWrittenSuccessful = true;
 			}
 			else
 			{
-				size_t grabSize;
-				for (size_t i = 0; i < lengthDoc; i += grabSize)
+				WcharMbcsConvertor& wmc = WcharMbcsConvertor::getInstance();
+				if (lengthDoc == 0)
 				{
-					grabSize = lengthDoc - i;
-					if (grabSize > blockSize)
-						grabSize = blockSize;
+					isWrittenSuccessful = UnicodeConvertor.writeFile(buf, 0);
+				}
+				else
+				{
+					size_t grabSize;
+					for (size_t i = 0; i < lengthDoc; i += grabSize)
+					{
+						grabSize = lengthDoc - i;
+						if (grabSize > blockSize)
+							grabSize = blockSize;
 
-					int newDataLen = 0;
-					int incompleteMultibyteChar = 0;
-					const char* newData = wmc.encode(SC_CP_UTF8, encoding, buf + i, static_cast<int>(grabSize), &newDataLen, &incompleteMultibyteChar);
-					grabSize -= incompleteMultibyteChar;
-					isWrittenSuccessful = UnicodeConvertor.writeFile(newData, newDataLen);
+						int newDataLen = 0;
+						int incompleteMultibyteChar = 0;
+						const char* newData = wmc.encode(SC_CP_UTF8, encoding, buf + i, static_cast<int>(grabSize), &newDataLen, &incompleteMultibyteChar);
+						grabSize -= incompleteMultibyteChar;
+						isWrittenSuccessful = UnicodeConvertor.writeFile(newData, newDataLen);
+					}
 				}
 			}
 		}
@@ -1685,7 +1696,7 @@ bool FileManager::loadFileData(Document doc, int64_t fileSize, const TCHAR * fil
 				fileFormat._phext = detectPhext(data, lenFile);
 				if (fileFormat._phext)
 				{
-					_pscratchTilla->execute(SCI_SET_PHEXT_ENABLED, 1, 0);
+					_pscratchTilla->execute(SCI_SET_PHEXT_ENABLED, phext::Break::LINE, 0);
 					_pscratchTilla->execute(SCI_SET_PHEXT_SCROLL, start.ScrollID, 0);
 					_pscratchTilla->execute(SCI_SET_PHEXT_SECTION, start.SectionID, 0);
 					_pscratchTilla->execute(SCI_SET_PHEXT_CHAPTER, start.ChapterID, 0);

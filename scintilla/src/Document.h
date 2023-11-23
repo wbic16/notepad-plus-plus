@@ -278,19 +278,9 @@ public:
 
 	phext::Coordinate Coordinate;
 
-	void setPhextEnabled(bool enabled)
-	{
-		_phextEnabled = enabled;
-	}
-
-	bool getPhextEnabled() const {
-		return _phextEnabled;
-	}
-
 private:
 	int refCount;	
 	DocumentOption _docOptions;
-	bool _phextEnabled = false;
 	using PhextCellScroll = std::shared_ptr<CellBuffer>;
 	using PhextCellSection = phext::MappedDimension<PhextCellScroll>;
 	using PhextCellChapter = phext::MappedDimension<PhextCellSection>;
@@ -371,7 +361,7 @@ public:
 	bool backspaceUnindents;
 	ActionDuration durationStyleOneByte;
 
-	std::unique_ptr<IDecorationList> decorations;
+	std::unique_ptr<IDecorationList> decorations;	
 
 	Document(Scintilla::DocumentOption options);
 	// Deleted so Document objects can not be copied.
@@ -464,6 +454,7 @@ public:
 	[[nodiscard]] Sci::Position EditionNextDelete(Sci::Position pos) const noexcept { return cb().EditionNextDelete(pos); }
 
 	const char * SCI_METHOD BufferPointer() override { return cb().BufferPointer(); }
+	const char* SCI_METHOD PhextPointer();
 	const char *RangePointer(Sci::Position position, Sci::Position rangeLength) noexcept { return cb().RangePointer(position, rangeLength); }
 	Sci::Position GapPosition() const noexcept { return cb().GapPosition(); }
 
@@ -610,6 +601,8 @@ private:
 	void NotifyModifyAttempt();
 	void NotifySavePoint(bool atSavePoint);
 	void NotifyModified(DocModification mh);
+
+	std::string m_phextBuffer;
 };
 
 class UndoGroup {

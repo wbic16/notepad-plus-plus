@@ -291,6 +291,101 @@ void Document::SetSavePoint() {
 	NotifySavePoint(true);
 }
 
+const char* SCI_METHOD Document::PhextPointer() {
+	m_phextBuffer.clear();
+	phext::Coordinate walker;
+	const auto& libraries = phext.map;
+	for (const auto& libPair : libraries)
+	{
+		while (walker.LibraryID < libPair.first)
+		{
+			m_phextBuffer.push_back(phext::LIBRARY_BREAK);
+			walker.libraryBreak();
+		}
+		const auto& library = libPair.second->map;
+		for (const auto& shelfPair : library)
+		{
+			while (walker.ShelfID < shelfPair.first)
+			{
+				m_phextBuffer.push_back(phext::SHELF_BREAK);
+				walker.shelfBreak();
+			}
+			const auto& shelf = shelfPair.second->map;
+			for (const auto& seriesPair : shelf)
+			{
+				while (walker.SeriesID < seriesPair.first)
+				{
+					m_phextBuffer.push_back(phext::SERIES_BREAK);
+					walker.seriesBreak();
+				}
+				const auto& series = seriesPair.second->map;
+				for (const auto& collectionPair : series)
+				{
+					while (walker.CollectionID < collectionPair.first)
+					{
+						m_phextBuffer.push_back(phext::COLLECTION_BREAK);
+						walker.collectionBreak();
+					}
+					const auto& collection = collectionPair.second->map;
+					for (const auto& volumePair : collection)
+					{
+						while (walker.VolumeID < volumePair.first)
+						{
+							m_phextBuffer.push_back(phext::VOLUME_BREAK);
+							walker.volumeBreak();
+						}
+						const auto& book = volumePair.second->map;
+						for (const auto& bookPair : book)
+						{
+							while (walker.BookID < bookPair.first)
+							{
+								m_phextBuffer.push_back(phext::BOOK_BREAK);
+								walker.bookBreak();
+							}
+							const auto& chapter = bookPair.second->map;
+							for (const auto& chapterPair : chapter)
+							{
+								while (walker.ChapterID < chapterPair.first)
+								{
+									m_phextBuffer.push_back(phext::CHAPTER_BREAK);
+									walker.chapterBreak();
+								}
+								const auto& section = chapterPair.second->map;
+								for (const auto& sectionPair : section)
+								{
+									while (walker.SectionID < sectionPair.first)
+									{
+										m_phextBuffer.push_back(phext::SECTION_BREAK);
+										walker.sectionBreak();
+									}
+									for (const auto& scrollPair : sectionPair.second->map)
+									{
+										const auto& scroll = *(scrollPair.second);
+										while (walker.ScrollID < scrollPair.first)
+										{
+											m_phextBuffer.push_back(phext::SCROLL_BREAK);
+											walker.scrollBreak();
+										}
+										std::string segment(scroll->BufferPointer());
+										m_phextBuffer += segment;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	if (m_phextBuffer.size() == 0)
+	{
+		return nullptr;
+	}
+
+	return m_phextBuffer.c_str();
+}
+
 void Document::TentativeUndo() {
 	if (!TentativeActive())
 		return;

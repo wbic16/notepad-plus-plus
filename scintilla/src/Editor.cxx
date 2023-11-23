@@ -128,7 +128,6 @@ Editor::Editor() : durationWrapOneByte(0.000001, 0.00000001, 0.00001) {
 	stylesValid = false;
 	technology = Technology::Default;
 	scaleRGBAImage = 100.0f;
-	coordinate = phext::Coordinate();
 
 	cursorMode = CursorShape::Normal;
 
@@ -3948,52 +3947,75 @@ int Editor::KeyCommand(Message iMessage) {
 		ShowCaretAtCurrentPosition();		// Avoid blinking
 		break;
 	case Message::NewLine:
-		NewLine();
+		switch (dimensionBreakType)
+		{
+		case phext::Break::SCROLL:
+			pdoc->Coordinate.scrollBreak();			
+			break;
+		case phext::Break::SECTION:
+			pdoc->Coordinate.sectionBreak();
+			break;
+		case phext::Break::CHAPTER:
+			pdoc->Coordinate.chapterBreak();
+			break;
+		case phext::Break::BOOK:
+			pdoc->Coordinate.bookBreak();
+			break;
+		case phext::Break::VOLUME:
+			pdoc->Coordinate.volumeBreak();
+			break;
+		case phext::Break::COLLECTION:
+			pdoc->Coordinate.collectionBreak();
+			break;
+		case phext::Break::SERIES:
+			pdoc->Coordinate.seriesBreak();
+			break;
+		case phext::Break::SHELF:
+			pdoc->Coordinate.shelfBreak();
+			break;
+		case phext::Break::LIBRARY:
+			pdoc->Coordinate.libraryBreak();
+			break;
+		default:
+			NewLine();
+			break;
+		}		
 		break;
 
 	case Message::PhextScrollBreak:
-		coordinate.scrollBreak();
-		NewLine();
+		pdoc->Coordinate.scrollBreak();
 		break;
 
 	case Message::PhextSectionBreak:
-		coordinate.sectionBreak();
-		NewLine();
+		pdoc->Coordinate.sectionBreak();
 		break;
 
 	case Message::PhextChapterBreak:
-		coordinate.chapterBreak();
-		NewLine();
+		pdoc->Coordinate.chapterBreak();
 		break;
 
 	case Message::PhextBookBreak:
-		coordinate.bookBreak();
-		NewLine();
+		pdoc->Coordinate.bookBreak();
 		break;
 
 	case Message::PhextVolumeBreak:
-		coordinate.volumeBreak();
-		NewLine();
+		pdoc->Coordinate.volumeBreak();
 		break;
 
 	case Message::PhextCollectionBreak:
-		coordinate.collectionBreak();
-		NewLine();
+		pdoc->Coordinate.collectionBreak();
 		break;
 
 	case Message::PhextSeriesBreak:
-		coordinate.seriesBreak();
-		NewLine();
+		pdoc->Coordinate.seriesBreak();
 		break;
 
 	case Message::PhextShelfBreak:
-		coordinate.shelfBreak();
-		NewLine();
+		pdoc->Coordinate.shelfBreak();
 		break;
 
 	case Message::PhextLibraryBreak:
-		coordinate.libraryBreak();
-		NewLine();
+		pdoc->Coordinate.libraryBreak();
 		break;
 
 	case Message::FormFeed:
@@ -7070,10 +7092,10 @@ sptr_t Editor::WndProc(Message iMessage, uptr_t wParam, sptr_t lParam) {
 		return vs.lineHeight;
 
 	case Message::GetPhextEnabled:
-		return pdoc->getPhextEnabled();
+		return dimensionBreakType;
 
-	case Message::SetPhextEnabled:
-		pdoc->setPhextEnabled(wParam != 0);
+	case Message::SetPhextEnabled:		
+		dimensionBreakType = static_cast<phext::Break>(wParam);
 		break;
 
 	case Message::GetPhextScroll:
@@ -8531,6 +8553,9 @@ sptr_t Editor::WndProc(Message iMessage, uptr_t wParam, sptr_t lParam) {
 
 	case Message::GetCharacterPointer:
 		return reinterpret_cast<sptr_t>(pdoc->BufferPointer());
+
+	case Message::GetPhextPointer:
+		return reinterpret_cast<sptr_t>(pdoc->PhextPointer());
 
 	case Message::GetRangePointer:
 		return reinterpret_cast<sptr_t>(pdoc->RangePointer(
