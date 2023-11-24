@@ -29,8 +29,6 @@ struct NppData
 	HWND _nppHandle = nullptr;
 	HWND _scintillaMainHandle = nullptr;
 	HWND _scintillaSecondHandle = nullptr;
-	HWND _scintillaPhextBefore = nullptr;
-	HWND _scintillaPhextAfter = nullptr;
 };
 
 typedef void (__cdecl * PFUNCSETINFO)(NppData);

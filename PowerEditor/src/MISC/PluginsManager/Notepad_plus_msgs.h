@@ -84,8 +84,6 @@ enum Platform { PF_UNKNOWN, PF_X86, PF_X64, PF_IA64, PF_ARM64 };
 	#define NPPM_GETCURRENTDOCINDEX (NPPMSG + 23)
 		#define MAIN_VIEW 0
 		#define SUB_VIEW 1
-		#define PHEXT_BEFORE 2
-		#define PHEXT_AFTER 3
 
 	#define NPPM_SETSTATUSBAR (NPPMSG + 24)
 		#define STATUSBAR_DOC_TYPE 0

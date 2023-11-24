@@ -8,11 +8,14 @@
 #ifndef SELECTION_H
 #define SELECTION_H
 
+#include "phext/phext.h"
+
 namespace Scintilla::Internal {
 
 class SelectionPosition {
 	Sci::Position position;
 	Sci::Position virtualSpace;
+	phext::Coordinate phextCoordinate;
 public:
 	explicit SelectionPosition(Sci::Position position_= Sci::invalidPosition, Sci::Position virtualSpace_=0) noexcept : position(position_), virtualSpace(virtualSpace_) {
 		PLATFORM_ASSERT(virtualSpace < 800000000);

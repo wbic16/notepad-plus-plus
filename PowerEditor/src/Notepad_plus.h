@@ -294,8 +294,6 @@ private:
 
     ScintillaEditView _subEditView = ScintillaEditView(MAIN_EDIT_ZONE);  // only _mainEditView and _subEditView are MAIN_EDIT_ZONE comparing with other Scintilla controls
     ScintillaEditView _mainEditView = ScintillaEditView(MAIN_EDIT_ZONE); // only _mainEditView and _subEditView are MAIN_EDIT_ZONE comparing with other Scintilla controls
-	 ScintillaEditView _phextBefore = ScintillaEditView(MAIN_EDIT_ZONE);
-	 ScintillaEditView _phextAfter = ScintillaEditView(MAIN_EDIT_ZONE);
 	ScintillaEditView _invisibleEditView; // for searches
 	ScintillaEditView _fileEditView;      // for FileManager
     ScintillaEditView* _pEditView = nullptr;

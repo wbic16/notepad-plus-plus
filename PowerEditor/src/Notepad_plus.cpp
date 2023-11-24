@@ -281,8 +281,6 @@ LRESULT Notepad_plus::init(HWND hwnd)
 
 	init(_mainEditView, { hwnd, svp, true, 0 });
 	init(_subEditView, { hwnd, svp, false, 0 });
-	init(_phextBefore, { hwnd, svp, true, 1 });
-	init(_phextAfter, { hwnd, svp, true, 2 });
 
 	int tabBarStatus = nppGUI._tabStatus;
 
@@ -416,8 +414,6 @@ LRESULT Notepad_plus::init(HWND hwnd)
 	nppData._nppHandle = hwnd;
 	nppData._scintillaMainHandle = _mainEditView.getHSelf();
 	nppData._scintillaSecondHandle = _subEditView.getHSelf();
-	nppData._scintillaPhextBefore = _phextBefore.getHSelf();
-	nppData._scintillaPhextAfter = _phextAfter.getHSelf();
 
 	_scintillaCtrls4Plugins.init(_pPublicInterface->getHinst(), hwnd);
 	_pluginsManager.init(nppData);
@@ -839,12 +835,8 @@ LRESULT Notepad_plus::init(HWND hwnd)
 	//Load initial docs into doctab
 	loadBufferIntoView(_mainEditView.getCurrentBufferID(), MAIN_VIEW);
 	loadBufferIntoView(_subEditView.getCurrentBufferID(), SUB_VIEW);
-	loadBufferIntoView(_phextBefore.getCurrentBufferID(), PHEXT_BEFORE);
-	loadBufferIntoView(_phextAfter.getCurrentBufferID(), PHEXT_AFTER);
 	activateBuffer(_mainEditView.getCurrentBufferID(), MAIN_VIEW);
 	activateBuffer(_subEditView.getCurrentBufferID(), SUB_VIEW);
-	activateBuffer(_phextBefore.getCurrentBufferID(), PHEXT_BEFORE);
-	activateBuffer(_phextAfter.getCurrentBufferID(), PHEXT_AFTER);
 
 	_mainEditView.getFocus();
 
@@ -873,8 +865,6 @@ void Notepad_plus::killAllChildren()
     _subDocTab.destroy();
     _mainEditView.destroy();
     _subEditView.destroy();
-	 _phextBefore.destroy();
-	 _phextAfter.destroy();
     _invisibleEditView.destroy();
     _subSplitter.destroy();
     _statusBar.destroy();
