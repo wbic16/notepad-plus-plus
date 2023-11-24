@@ -709,13 +709,77 @@ SelectionPosition EditView::SPositionFromLocation(Surface *surface, const EditMo
 	pt.x = pt.x - vs.textStart;
 	Sci::Line visibleLine = static_cast<int>(std::floor(pt.y / vs.lineHeight));
 	if (!canReturnInvalid && (visibleLine < 0))
+	{
 		visibleLine = 0;
+		if (model.pdoc->Coordinate.ScrollID <= 1)
+		{
+			if (model.pdoc->Coordinate.SectionID <= 1)
+			{
+				if (model.pdoc->Coordinate.ChapterID <= 1)
+				{
+					if (model.pdoc->Coordinate.BookID <= 1)
+					{
+						if (model.pdoc->Coordinate.VolumeID <= 1)
+						{
+							if (model.pdoc->Coordinate.CollectionID <= 1)
+							{
+								if (model.pdoc->Coordinate.SeriesID <= 1)
+								{
+									if (model.pdoc->Coordinate.ShelfID <= 1)
+									{
+										if (model.pdoc->Coordinate.LibraryID > 1)
+										{
+											model.pdoc->Coordinate.libraryBreak(-1);
+										}
+									}
+									else
+									{
+										model.pdoc->Coordinate.shelfBreak(-1);
+									}
+								}
+								else
+								{
+									model.pdoc->Coordinate.seriesBreak(-1);
+								}
+							}
+							else
+							{
+								model.pdoc->Coordinate.collectionBreak(-1);
+							}
+						}
+						else
+						{
+							model.pdoc->Coordinate.volumeBreak(-1);
+						}
+					}
+					else
+					{
+						model.pdoc->Coordinate.bookBreak(-1);
+					}
+				}
+				else
+				{
+					model.pdoc->Coordinate.chapterBreak(-1);
+				}
+			}
+			else
+			{
+				model.pdoc->Coordinate.sectionBreak(-1);
+			}
+		}
+		else
+		{
+			model.pdoc->Coordinate.scrollBreak(-1);
+		}
+	}
 	const Sci::Line lineDoc = model.pcs->DocFromDisplay(visibleLine);
 	if (canReturnInvalid && (lineDoc < 0))
 		return SelectionPosition(Sci::invalidPosition);
 	if (lineDoc >= model.pdoc->LinesTotal())
+	{
 		return SelectionPosition(canReturnInvalid ? Sci::invalidPosition :
 			model.pdoc->Length());
+	}
 	const Sci::Position posLineStart = model.pdoc->LineStart(lineDoc);
 	std::shared_ptr<LineLayout> ll = RetrieveLineLayout(lineDoc, model);
 	if (surface && ll) {

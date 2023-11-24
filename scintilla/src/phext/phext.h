@@ -46,9 +46,9 @@ namespace phext
       uint16_t SectionID{1};
       uint16_t ScrollID{1};
 
-      void libraryBreak()
+      void libraryBreak(const int increment = 1)
       {
-         LibraryID += 1;
+         LibraryID += increment;
          ShelfID = 1;
          SeriesID = 1;
          CollectionID = 1;
@@ -59,9 +59,9 @@ namespace phext
          ScrollID = 1;
       }
 
-      void shelfBreak()
+      void shelfBreak(const int increment = 1)
       {
-         ShelfID += 1;
+         ShelfID += increment;
          SeriesID = 1;
          CollectionID = 1;
          VolumeID = 1;
@@ -71,9 +71,9 @@ namespace phext
          ScrollID = 1;
       }
 
-      void seriesBreak()
+      void seriesBreak(const int increment = 1)
       {
-         SeriesID += 1;
+         SeriesID += increment;
          CollectionID = 1;
          VolumeID = 1;
          BookID = 1;
@@ -82,9 +82,9 @@ namespace phext
          ScrollID = 1;
       }
 
-      void collectionBreak()
+      void collectionBreak(const int increment = 1)
       {
-         CollectionID += 1;
+         CollectionID += increment;
          VolumeID = 1;
          BookID = 1;
          ChapterID = 1;
@@ -92,39 +92,39 @@ namespace phext
          ScrollID = 1;
       }
 
-      void volumeBreak()
+      void volumeBreak(const int increment = 1)
       {
-         VolumeID += 1;
+         VolumeID += increment;
          BookID = 1;
          ChapterID = 1;
          SectionID = 1;
          ScrollID = 1;
       }
 
-      void bookBreak()
+      void bookBreak(const int increment = 1)
       {
-         BookID += 1;
+         BookID += increment;
          ChapterID = 1;
          SectionID = 1;
          ScrollID = 1;
       }
 
-      void chapterBreak()
+      void chapterBreak(const int increment = 1)
       {
          ChapterID += 1;
          SectionID = 1;
          ScrollID = 1;
       }
 
-      void sectionBreak()
+      void sectionBreak(const int increment = 1)
       {
-         SectionID += 1;
+         SectionID += increment;
          ScrollID = 1;
       }
 
-      void scrollBreak()
+      void scrollBreak(const int increment = 1)
       {
-         ScrollID += 1;
+         ScrollID += increment;
       }
    };
 }
