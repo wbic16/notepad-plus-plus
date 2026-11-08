@@ -84,6 +84,9 @@ SET(src_files
 			./WinControls/Grid/BabyGrid.cpp
 			./WinControls/Grid/BabyGridWrapper.cpp
 			./ScintillaComponent/Buffer.cpp
+			./phext/PhextDocument.cpp
+			./phext/Projection.cpp
+			./phext/SubspaceSpec.cpp
 			./uchardet/CharDistribution.cpp
 			./WinControls/ClipboardHistory/clipboardHistoryPanel.cpp
 			./WinControls/ColourPicker/ColourPicker.cpp
