@@ -659,6 +659,20 @@
     #define  IDM_WINDOW_COPY_NAME 	(IDM_WINDOW_MRU_LIMIT + 1)
     #define  IDM_WINDOW_COPY_PATH 	(IDM_WINDOW_MRU_LIMIT + 2)
 
+// Phext subspace support (fork patch, see PATCHES.md). Command block is
+// IDM + 9500, clear of every upstream block (EXECUTE ends at IDM + 9001).
+#define    IDM_PHEXT  (IDM + 9500)
+    #define    IDM_PHEXT_OPEN_SUBSPACE        (IDM_PHEXT + 1)
+    #define    IDM_PHEXT_CHANGE_SUBSPACE      (IDM_PHEXT + 2)
+    #define    IDM_PHEXT_GOTO_COORDINATE      (IDM_PHEXT + 3)
+    #define    IDM_PHEXT_SPLIT_SCROLL         (IDM_PHEXT + 4)
+    #define    IDM_PHEXT_INSERT_SCROLL_AFTER  (IDM_PHEXT + 5)
+    #define    IDM_PHEXT_DELETE_SCROLL        (IDM_PHEXT + 6)
+    #define    IDM_PHEXT_REPAIR_SEPARATORS    (IDM_PHEXT + 7)
+    #define    IDM_PHEXT_VIEW_RAW             (IDM_PHEXT + 8)
+    #define    IDM_PHEXT_NAVIGATOR            (IDM_PHEXT + 9)
+    #define    IDM_PHEXT_FILE_INFO            (IDM_PHEXT + 10)
+
 #define IDR_DROPLIST_MENU 14000
     #define    IDM_DROPLIST_LIST           (IDR_DROPLIST_MENU + 1)
     #define    IDM_DROPLIST_MRU_FIRST      (IDR_DROPLIST_MENU + 20)

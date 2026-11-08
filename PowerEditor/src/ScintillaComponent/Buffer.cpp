@@ -1067,6 +1067,14 @@ BufferID FileManager::loadFile(const wchar_t* filename, Document doc, int encodi
 		if (!newBuf->_isLargeFile && ((newBuf->getLangType() == L_TEXT) && (loadedFileFormat._language != L_TEXT)))
 			newBuf->setLangType(loadedFileFormat._language);
 
+		// Phext (fork patch): adopt the model built by loadPhextFileData.
+		if (_phextPendingState)
+		{
+			newBuf->_phextState = std::move(_phextPendingState);
+			newBuf->setUnicodeMode(uniUTF8_NoBOM); // display-only: phext bytes bypass encoding/EOL paths entirely
+			newBuf->setEolFormat(EolType::osdefault);
+		}
+
 		setLoadedBufferEncodingAndEol(newBuf, UnicodeConvertor, loadedFileFormat._encoding, loadedFileFormat._eolFormat);
 
 		_buffers.push_back(newBuf);
@@ -1123,6 +1131,8 @@ bool FileManager::reloadBuffer(BufferID id)
 	buf->_canNotify = false;	//disable notify during file load, we don't want dirty status to be triggered
 	bool res = loadFileData(doc, fileSize, buf->getFullPathName(), data, &unicodeConvertor, loadedFileFormat);
 	buf->_canNotify = true;
+	if (res && _phextPendingState) // Phext (fork patch): swap in the reloaded model
+		buf->_phextState = std::move(_phextPendingState);
 
 	delete[] data;
 
@@ -1147,6 +1157,14 @@ void FileManager::setLoadedBufferEncodingAndEol(Buffer* buf, const Utf8_16_Read&
 	UniMode unimode2Set = unicodeConvertor.getEncoding();
 	resolveLoadedEncoding(encoding2Set, unimode2Set);
 
+	if (buf->isPhext())
+	{
+		// Phext (fork patch): encoding/EOL display values are inert for
+		// phext buffers — load/save never route through the converters.
+		buf->setEncoding(-1);
+		buf->setUnicodeMode(uniUTF8_NoBOM);
+		return;
+	}
 	buf->setEncoding(encoding2Set);
 	buf->setUnicodeMode(unimode2Set);
 
@@ -1299,7 +1317,43 @@ bool FileManager::backupCurrentBuffer()
 	{
 		if (buffer->isModified()) // buffer dirty and modified, write the backup file
 		{
-			UniMode mode = buffer->getUnicodeMode();
+			// Phext (fork patch): a phext buffer's Scintilla text is a projection.
+	// Parse it back, splice it into the PhextDocument, and write the
+	// assembled phext bytes directly — the encoding/EOL conversion path
+	// below would destroy phext break bytes. A blocked splice (corrupted
+	// separator, move out of the subspace) writes NOTHING and reports.
+	// "Save a Copy" (isCopy) keeps upstream behaviour for the copy only.
+	if (buffer->isPhext() && !isCopy)
+	{
+		_pscratchTilla->execute(SCI_SETDOCPOINTER, 0, buffer->_doc);
+		size_t lengthDoc = _pscratchTilla->getCurrentDocLen();
+		const char* bufPtr = reinterpret_cast<const char*>(_pscratchTilla->execute(SCI_GETCHARACTERPOINTER));
+		std::string editedText(bufPtr, lengthDoc);
+		_pscratchTilla->execute(SCI_SETDOCPOINTER, 0, _scratchDocDefault);
+
+		std::string outBytes;
+		std::string error;
+		if (!buffer->phextState()->saveFromProjectionText(editedText, outBytes, error))
+		{
+			std::wstring werr(error.begin(), error.end());
+			::MessageBoxW(_pNotepadPlus->_pEditView->getHSelf(),
+				(L"Phext save blocked: " + werr + L"\n\nThe file on disk was not changed.").c_str(),
+				L"Phext", MB_OK | MB_ICONWARNING | MB_APPLMODAL);
+			return SavingStatus::SaveWritingFailed;
+		}
+
+		HANDLE hFile = ::CreateFileW(fullpath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+		if (hFile == INVALID_HANDLE_VALUE)
+			return SavingStatus::SaveOpenFailed;
+		DWORD written = 0;
+		BOOL writeOk = ::WriteFile(hFile, outBytes.data(), static_cast<DWORD>(outBytes.size()), &written, NULL);
+		::CloseHandle(hFile);
+		if (!writeOk || written != outBytes.size())
+			return SavingStatus::SaveWritingFailed;
+		return SavingStatus::SaveOK;
+	}
+
+	UniMode mode = buffer->getUnicodeMode();
 			if (mode == uniUTF8_NoBOM)
 				mode = uni8Bit;	//set the mode to ANSI to prevent converter from adding BOM and performing conversions, Scintilla's data can be copied directly
 
@@ -2038,8 +2092,72 @@ LangType FileManager::detectLanguageFromTextBeginning(const unsigned char *data,
 	return L_TEXT;
 }
 
+// Phext (fork patch): byte-faithful load. Reads the file as raw bytes into
+// a PhextBufferState, then fills the Scintilla document with the default
+// subspace projection's text. No encoding detection, no EOL conversion.
+bool FileManager::loadPhextFileData(Document doc, int64_t fileSize, const wchar_t* filename, LoadedFileFormat& fileFormat)
+{
+	FILE* fp = _wfopen(filename, L"rb");
+	if (!fp)
+		return false;
+
+	std::string raw;
+	raw.resize(static_cast<size_t>(fileSize));
+	size_t got = fileSize > 0 ? fread(&raw[0], 1, raw.size(), fp) : 0;
+	fclose(fp);
+	if (got != raw.size())
+		return false;
+
+	auto state = std::make_unique<phext::PhextBufferState>();
+	state->loadFromBytes(raw);
+	const std::string& projText = state->projection().text();
+
+	_pscratchTilla->execute(SCI_SETSTATUS, SC_STATUS_OK);
+	_pscratchTilla->execute(SCI_SETDOCPOINTER, 0, doc);
+	bool ro = _pscratchTilla->execute(SCI_GETREADONLY) != 0;
+	if (ro)
+		_pscratchTilla->execute(SCI_SETREADONLY, false);
+	_pscratchTilla->execute(SCI_CLEARALL);
+	_pscratchTilla->execute(SCI_SETUNDOCOLLECTION, false);
+	_pscratchTilla->execute(SCI_SETCODEPAGE, SC_CP_UTF8);
+	_pscratchTilla->execute(SCI_SETEOLMODE, SC_EOL_LF); // projection text is LF-only
+	_pscratchTilla->execute(SCI_ALLOCATE, WPARAM(projText.size() + 1024));
+	_pscratchTilla->execute(SCI_APPENDTEXT, WPARAM(projText.size()), reinterpret_cast<LPARAM>(projText.c_str()));
+	_pscratchTilla->execute(SCI_EMPTYUNDOBUFFER);
+	_pscratchTilla->execute(SCI_SETSAVEPOINT);
+	_pscratchTilla->execute(SCI_SETUNDOCOLLECTION, true);
+	if (ro)
+		_pscratchTilla->execute(SCI_SETREADONLY, true);
+	_pscratchTilla->execute(SCI_SETDOCPOINTER, 0, _scratchDocDefault);
+
+	fileFormat._encoding = -1;
+	fileFormat._eolFormat = EolType::osdefault;
+	fileFormat._language = L_TEXT;
+
+	_phextPendingState = std::move(state);
+	return true;
+}
+
 bool FileManager::loadFileData(Document doc, int64_t fileSize, const wchar_t * filename, char* data, Utf8_16_Read * unicodeConvertor, LoadedFileFormat& fileFormat)
 {
+	// Phext (fork patch, see PATCHES.md): .phext files bypass encoding
+	// detection and EOL conversion entirely — phext break bytes are
+	// destroyed by both. Detection is by extension only (no content
+	// sniffing: the 2023 patch false-positived on any binary file).
+	if (phext::isPhextFileName(filename))
+		return loadPhextFileData(doc, fileSize, filename, fileFormat);
+	if (phext::isSealedPhextFileName(filename))
+	{
+		// Sealed (.phext.xz) editing needs the libphext-cpp xz seal; phase 1
+		// refuses rather than mangling bytes through the text load path.
+		NativeLangSpeaker* pSpeaker = (NppParameters::getInstance()).getNativeLangSpeaker();
+		pSpeaker->messageBox("PhextSealedNotSupported",
+			_pNotepadPlus->_pEditView->getHSelf(),
+			L"Sealed phext files (.phext.xz) cannot be opened yet. Unseal the file to plain .phext first.",
+			L"Phext",
+			MB_OK | MB_APPLMODAL);
+		return false;
+	}
 	// Check file size firstly
 	// size/6 is the normal room Scintilla keeps for editing, but here we limit it to 1MiB when loading (maybe we want to load big files without editing them too much)
 	int64_t bufferSizeRequested = fileSize + std::min<int64_t>(1LL << 20, fileSize / 6);

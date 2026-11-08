@@ -114,6 +114,9 @@
     <ClCompile Include="..\src\WinControls\Grid\BabyGrid.cpp" />
     <ClCompile Include="..\src\WinControls\Grid\BabyGridWrapper.cpp" />
     <ClCompile Include="..\src\ScintillaComponent\Buffer.cpp" />
+    <ClCompile Include="..\src\phext\PhextDocument.cpp" />
+    <ClCompile Include="..\src\phext\Projection.cpp" />
+    <ClCompile Include="..\src\phext\SubspaceSpec.cpp" />
     <ClCompile Include="..\src\WinControls\ClipboardHistory\clipboardHistoryPanel.cpp" />
     <ClCompile Include="..\src\WinControls\ColourPicker\ColourPicker.cpp" />
     <ClCompile Include="..\src\WinControls\ColourPicker\ColourPopup.cpp" />
@@ -259,6 +262,11 @@
     <ClInclude Include="..\src\WinControls\Grid\BabyGrid.h" />
     <ClInclude Include="..\src\WinControls\Grid\BabyGridWrapper.h" />
     <ClInclude Include="..\src\ScintillaComponent\Buffer.h" />
+    <ClInclude Include="..\src\phext\phext_core.h" />
+    <ClInclude Include="..\src\phext\PhextDocument.h" />
+    <ClInclude Include="..\src\phext\Projection.h" />
+    <ClInclude Include="..\src\phext\SubspaceSpec.h" />
+    <ClInclude Include="..\src\phext\PhextBufferGlue.h" />
     <ClInclude Include="..\src\WinControls\ClipboardHistory\clipboardHistoryPanel.h" />
     <ClInclude Include="..\src\WinControls\ClipboardHistory\clipboardHistoryPanel_rc.h" />
     <ClInclude Include="..\src\ScintillaComponent\colors.h" />

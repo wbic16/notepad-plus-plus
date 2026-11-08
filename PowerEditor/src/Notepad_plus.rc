@@ -1368,6 +1368,26 @@ BEGIN
     BEGIN
         MENUITEM "Recent Window",               IDM_DROPLIST_LIST, GRAYED
     END
+
+    // Phext subspace menu (fork patch, see PATCHES.md). Appended last so
+    // MENUINDEX_PHEXT == 15 and no existing menu index shifts. Items are
+    // enabled only for phext buffers (Notepad_plus::checkDocState).
+    POPUP "&Phext"
+    BEGIN
+        MENUITEM "&Open Subspace...",              IDM_PHEXT_OPEN_SUBSPACE
+        MENUITEM "&Change Subspace...",            IDM_PHEXT_CHANGE_SUBSPACE
+        MENUITEM "&Go to Coordinate...",           IDM_PHEXT_GOTO_COORDINATE
+        MENUITEM SEPARATOR
+        MENUITEM "Split &Scroll at Caret",         IDM_PHEXT_SPLIT_SCROLL
+        MENUITEM "&Insert Scroll After",           IDM_PHEXT_INSERT_SCROLL_AFTER
+        MENUITEM "&Delete Scroll",                 IDM_PHEXT_DELETE_SCROLL
+        MENUITEM "&Repair Separators",             IDM_PHEXT_REPAIR_SEPARATORS
+        MENUITEM SEPARATOR
+        MENUITEM "View &Raw Bytes",                IDM_PHEXT_VIEW_RAW
+        MENUITEM "&Navigator",                     IDM_PHEXT_NAVIGATOR
+        MENUITEM SEPARATOR
+        MENUITEM "File &Info",                     IDM_PHEXT_FILE_INFO
+    END
     MENUITEM "✕",               IDM_FILE_CLOSE, HELP
 END
 

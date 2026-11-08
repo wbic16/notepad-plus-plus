@@ -16,9 +16,13 @@
 
 #pragma once
 
+#include <memory>
 #include <mutex>
 #include <cstdio>
 #include "Utf8_16.h"
+// Phext subspace support (fork patch, see PATCHES.md): the glue header
+// pulls in the editor-agnostic core under src/phext/.
+#include "../phext/PhextBufferGlue.h"
 
 
 class Notepad_plus;
@@ -181,6 +185,12 @@ private:
 	bool isAutoDetectEncodingDisabled4Loading = false;
 
 	bool loadFileData(Document doc, int64_t fileSize, const wchar_t* filename, char* buffer, Utf8_16_Read* UnicodeConvertor, LoadedFileFormat& fileFormat);
+	// Phext (fork patch): byte-faithful load for .phext files — no encoding
+	// detection, no EOL conversion; fills the document with the projection
+	// text and parks the PhextBufferState in _phextPendingState for the
+	// Buffer being created/reloaded to adopt.
+	bool loadPhextFileData(Document doc, int64_t fileSize, const wchar_t* filename, LoadedFileFormat& fileFormat);
+	std::unique_ptr<phext::PhextBufferState> _phextPendingState;
 	bool copyFileContentToScintilla(ScintillaEditView* ingestView, FILE* fp, char* data, int64_t fileSize, Utf8_16_Read* unicodeConvertor, LoadedFileFormat& fileFormat, EolType& format, int& sciStatus, const DocumentFillPolicy& policy);
 	void resolveLoadedEncoding(int& encodingOut, UniMode& unicodeModeOut) const;
 	LangType detectLanguageFromTextBeginning(const unsigned char *data, size_t dataLen);
@@ -276,6 +286,12 @@ public:
 	DocFileStatus getStatus() const { return _currentStatus; }
 
 	Document getDocument() { return _doc; }
+
+	// Phext subspace support (fork patch): non-null iff this buffer is a
+	// .phext file. The Scintilla document holds a Projection of the model;
+	// saves splice back through the state. Never set for non-phext buffers.
+	bool isPhext() const { return _phextState != nullptr; }
+	phext::PhextBufferState* phextState() { return _phextState.get(); }
 
 	void setDirty(bool dirty);
 
@@ -454,6 +470,7 @@ private:
 
 	//document properties
 	Document _doc;	//invariable
+	std::unique_ptr<phext::PhextBufferState> _phextState; // fork patch: phext model beside Scintilla (null for ordinary buffers)
 	LangType _lang = L_TEXT;
 	std::wstring _userLangExt; // it's useful if only (_lang == L_USER)
 	bool _isDirty = false;

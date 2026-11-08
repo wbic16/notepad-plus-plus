@@ -801,3 +801,6 @@
 #define MENUINDEX_WINDOW   11
 #define MENUINDEX_HELP     12
 #define MENUINDEX_LIST     14
+// Phext (fork patch): appended at the END of the menu bar so NO existing
+// MENUINDEX_* value shifts (help stays 12, list stays 14).
+#define MENUINDEX_PHEXT    15

@@ -2971,6 +2971,70 @@ void Notepad_plus::command(int id)
 			break;
 		}
 
+		// Phext subspace commands (fork patch, see PATCHES.md / PHEXT.md).
+		// Phase 1: FILE_INFO and REPAIR_SEPARATORS (validation report) are
+		// functional against the core; the dialog-driven commands are
+		// guarded stubs that say so in the UI rather than faking behaviour —
+		// their dialogs are phase-2 work in the MSVC session.
+		case IDM_PHEXT_FILE_INFO:
+		{
+			Buffer* buf = _pEditView->getCurrentBuffer();
+			if (buf && buf->isPhext())
+			{
+				const phext::PhextBufferState* st = buf->phextState();
+				std::wstring info = L"Subspace: ";
+				std::string specStr = st->spec().toString();
+				info += std::wstring(specStr.begin(), specStr.end());
+				info += st->spec().isInterval() ? L" (interval)\n" : L" (strided)\n";
+				info += L"Populated scrolls: " + std::to_wstring(st->document().populatedCount()) + L"\n";
+				info += L"Scroll slots: " + std::to_wstring(st->document().entries().size()) + L"\n";
+				info += L"File bytes: " + std::to_wstring(st->document().bytes().size());
+				::MessageBoxW(_pEditView->getHSelf(), info.c_str(), L"Phext - File Info", MB_OK | MB_APPLMODAL);
+			}
+			break;
+		}
+
+		case IDM_PHEXT_REPAIR_SEPARATORS:
+		{
+			Buffer* buf = _pEditView->getCurrentBuffer();
+			if (buf && buf->isPhext())
+			{
+				size_t len = _pEditView->getCurrentDocLen();
+				std::string text(len, '\0');
+				_pEditView->execute(SCI_GETTEXT, WPARAM(len + 1), reinterpret_cast<LPARAM>(text.data()));
+				phext::Projection::ParseResult pr = phext::Projection::parseEdited(text);
+				if (pr.ok)
+					::MessageBoxW(_pEditView->getHSelf(), L"All separator lines are valid.", L"Phext - Repair Separators", MB_OK | MB_APPLMODAL);
+				else
+				{
+					std::wstring msg = L"Separator problem on projection line " + std::to_wstring(pr.errorLine + 1) + L":\n";
+					msg += std::wstring(pr.error.begin(), pr.error.end());
+					msg += L"\n\nSaving is blocked until the line is restored to a generated separator line.";
+					::MessageBoxW(_pEditView->getHSelf(), msg.c_str(), L"Phext - Repair Separators", MB_OK | MB_ICONWARNING | MB_APPLMODAL);
+					_pEditView->execute(SCI_GOTOLINE, WPARAM(pr.errorLine));
+				}
+			}
+			break;
+		}
+
+		case IDM_PHEXT_OPEN_SUBSPACE:
+		case IDM_PHEXT_CHANGE_SUBSPACE:
+		case IDM_PHEXT_GOTO_COORDINATE:
+		case IDM_PHEXT_SPLIT_SCROLL:
+		case IDM_PHEXT_INSERT_SCROLL_AFTER:
+		case IDM_PHEXT_DELETE_SCROLL:
+		case IDM_PHEXT_VIEW_RAW:
+		case IDM_PHEXT_NAVIGATOR:
+		{
+			// TODO(PHEXT-PHASE2): dialogs / structural commands. The core
+			// operations behind all of these exist and are unit-tested
+			// (src/phext/); the Win32 dialog surface is MSVC-session work.
+			::MessageBoxW(_pEditView->getHSelf(),
+				L"This Phext command's dialog is not built yet (phase 2).\n\nThe editing model behind it - subspace projection, separator editing, splice save - is active for this buffer.",
+				L"Phext", MB_OK | MB_APPLMODAL);
+			break;
+		}
+
 		case IDM_FORMAT_TODOS:
 		case IDM_FORMAT_TOUNIX:
 		case IDM_FORMAT_TOMAC:

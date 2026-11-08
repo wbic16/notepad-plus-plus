@@ -2823,6 +2823,24 @@ void Notepad_plus::checkDocState()
 		::CheckMenuItem(_mainMenuHandle, IDM_EDIT_TOGGLESYSTEMREADONLY, MF_BYCOMMAND | (isSysReadOnly ? MF_CHECKED : MF_UNCHECKED));
 	}
 
+	// Phext (fork patch): the Phext menu is live only when the current
+	// buffer is a phext buffer. The check is Buffer::isPhext() — a real
+	// per-buffer fact. (The 2023 patch's isPhextEnabled() was hardwired
+	// true, enabling phext UI on every file.)
+	{
+		bool phextActive = curBuf->isPhext();
+		enableCommand(IDM_PHEXT_OPEN_SUBSPACE, phextActive, MENU);
+		enableCommand(IDM_PHEXT_CHANGE_SUBSPACE, phextActive, MENU);
+		enableCommand(IDM_PHEXT_GOTO_COORDINATE, phextActive, MENU);
+		enableCommand(IDM_PHEXT_SPLIT_SCROLL, phextActive, MENU);
+		enableCommand(IDM_PHEXT_INSERT_SCROLL_AFTER, phextActive, MENU);
+		enableCommand(IDM_PHEXT_DELETE_SCROLL, phextActive, MENU);
+		enableCommand(IDM_PHEXT_REPAIR_SEPARATORS, phextActive, MENU);
+		enableCommand(IDM_PHEXT_VIEW_RAW, phextActive, MENU);
+		enableCommand(IDM_PHEXT_NAVIGATOR, phextActive, MENU);
+		enableCommand(IDM_PHEXT_FILE_INFO, phextActive, MENU);
+	}
+
 	enableCommand(IDM_VIEW_GOTO_ANOTHER_VIEW, !curBuf->isInaccessible(), MENU);
 	enableCommand(IDM_VIEW_CLONE_TO_ANOTHER_VIEW, !curBuf->isInaccessible(), MENU);
 	enableCommand(IDM_VIEW_GOTO_NEW_INSTANCE, !curBuf->isInaccessible() && !curBuf->isDirty() && !curBuf->isUntitled(), MENU);
@@ -4688,6 +4706,25 @@ void Notepad_plus::updateStatusBar()
 	statusbarLnColStr = stringReplace(statusbarLnColStr, L"$STR_REPLACE1$", lnStr);
 	statusbarLnColStr = stringReplace(statusbarLnColStr, L"$STR_REPLACE2$", colStr);
 	wstring statusbarLnColSelStr = statusbarLnColStr + L"    " + statusbarSelStr;
+
+	// Phext (fork patch): for phext buffers, prefix the caret section with
+	// the coordinate of the scroll under the caret, read from the
+	// projection's offset map (SUBSPACE-DESIGN §2.6). Ordinary buffers are
+	// untouched.
+	{
+		Buffer* curBufSB = _pEditView->getCurrentBuffer();
+		if (curBufSB && curBufSB->isPhext())
+		{
+			phext::Coordinate coord;
+			bool onSeparator = false;
+			size_t caretPos = static_cast<size_t>(_pEditView->execute(SCI_GETCURRENTPOS));
+			if (curBufSB->phextState()->coordinateAt(caretPos, coord, onSeparator))
+			{
+				std::string coordStr = coord.toString();
+				statusbarLnColSelStr = std::wstring(coordStr.begin(), coordStr.end()) + L" \u00B7 " + statusbarLnColSelStr;
+			}
+		}
+	}
 
 	_statusBar.setText(statusbarLnColSelStr.c_str(), STATUSBAR_CUR_POS);
 
