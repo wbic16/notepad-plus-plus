@@ -47,6 +47,19 @@ standalone with g++ — see `tests/`.
 | `PowerEditor/src/NppCommands.cpp` | Command handlers: `IDM_PHEXT_FILE_INFO` (live: spec, populated/slot counts, bytes) and `IDM_PHEXT_REPAIR_SEPARATORS` (live: validates the current projection, reports and jumps to a corrupted separator) are functional; the dialog-driven commands (Open/Change Subspace, Go to Coordinate, Split, Insert, Delete, View Raw, Navigator) are guarded stubs that say so in the UI — TODO(PHEXT-PHASE2). | No fake functionality: what works works, what isn't built says it isn't. |
 | `PowerEditor/visual.net/notepadPlus.vcxproj` | Registers the three core `.cpp` files and five phext headers. | So the MSVC build compiles the core and glue with the app. |
 
+**MSVC correction (2026-11-08, first `phext-build` Actions run):** the phase-1
+draft had pasted the save-splice block into `backupCurrentBuffer` (where
+`isCopy`/`fullpath` are not in scope — MSVC C2065 ×2) and `saveBuffer` had no
+phext branch at all. Corrected: the block now lives in `saveBuffer` (with the
+upstream tail's post-save bookkeeping mirrored — dirty flag, save point,
+backup-file cleanup, hidden/system attribute restore; the language-from-content
+probe is skipped for phext buffers), and `backupCurrentBuffer` gained its own
+branch — splice first, write the assembled bytes to the backup file in place
+of the convertor write, stay silent on a blocked splice. Known limitation of
+the save branch: it does not take upstream's UAC-elevation path — a target
+that cannot be opened for writing fails closed with `SaveOpenFailed` rather
+than writing projection text through the convertor.
+
 ## Deliberately NOT carried over from the 2023 patch
 
 - Scintilla `Document`/`CellBuffer` per-scroll tree surgery (whole approach

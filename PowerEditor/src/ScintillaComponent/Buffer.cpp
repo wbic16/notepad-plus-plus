@@ -1317,41 +1317,25 @@ bool FileManager::backupCurrentBuffer()
 	{
 		if (buffer->isModified()) // buffer dirty and modified, write the backup file
 		{
-			// Phext (fork patch): a phext buffer's Scintilla text is a projection.
-	// Parse it back, splice it into the PhextDocument, and write the
-	// assembled phext bytes directly — the encoding/EOL conversion path
-	// below would destroy phext break bytes. A blocked splice (corrupted
-	// separator, move out of the subspace) writes NOTHING and reports.
-	// "Save a Copy" (isCopy) keeps upstream behaviour for the copy only.
-	if (buffer->isPhext() && !isCopy)
-	{
-		_pscratchTilla->execute(SCI_SETDOCPOINTER, 0, buffer->_doc);
-		size_t lengthDoc = _pscratchTilla->getCurrentDocLen();
-		const char* bufPtr = reinterpret_cast<const char*>(_pscratchTilla->execute(SCI_GETCHARACTERPOINTER));
-		std::string editedText(bufPtr, lengthDoc);
-		_pscratchTilla->execute(SCI_SETDOCPOINTER, 0, _scratchDocDefault);
-
-		std::string outBytes;
-		std::string error;
-		if (!buffer->phextState()->saveFromProjectionText(editedText, outBytes, error))
-		{
-			std::wstring werr(error.begin(), error.end());
-			::MessageBoxW(_pNotepadPlus->_pEditView->getHSelf(),
-				(L"Phext save blocked: " + werr + L"\n\nThe file on disk was not changed.").c_str(),
-				L"Phext", MB_OK | MB_ICONWARNING | MB_APPLMODAL);
-			return SavingStatus::SaveWritingFailed;
-		}
-
-		HANDLE hFile = ::CreateFileW(fullpath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-		if (hFile == INVALID_HANDLE_VALUE)
-			return SavingStatus::SaveOpenFailed;
-		DWORD written = 0;
-		BOOL writeOk = ::WriteFile(hFile, outBytes.data(), static_cast<DWORD>(outBytes.size()), &written, NULL);
-		::CloseHandle(hFile);
-		if (!writeOk || written != outBytes.size())
-			return SavingStatus::SaveWritingFailed;
-		return SavingStatus::SaveOK;
-	}
+			// Phext (fork patch): a phext buffer's Scintilla text is a
+			// projection, not the file. Splice it back through the model
+			// first; the assembled phext bytes are written to the backup
+			// file below in place of the encoding-converted write (phext
+			// break bytes do not survive codepage/EOL conversion). A
+			// blocked splice writes no backup this round; backups are
+			// periodic and stay silent (saveBuffer reports blocks).
+			std::string phextBackupBytes;
+			bool phextBackupReady = false;
+			if (buffer->isPhext())
+			{
+				size_t lengthDocBak = _pNotepadPlus->_pEditView->getCurrentDocLen();
+				char* bufBak = (char*)_pNotepadPlus->_pEditView->execute(SCI_GETCHARACTERPOINTER);
+				std::string editedText(bufBak, lengthDocBak);
+				std::string error;
+				if (!buffer->phextState()->saveFromProjectionText(editedText, phextBackupBytes, error))
+					return false;
+				phextBackupReady = true;
+			}
 
 	UniMode mode = buffer->getUnicodeMode();
 			if (mode == uniUTF8_NoBOM)
@@ -1407,7 +1391,33 @@ bool FileManager::backupCurrentBuffer()
 
 			std::wstring fullpathTemp = fullpath;
 			fullpathTemp += L".tmp";
-			if (UnicodeConvertor.openFile(buffer->isUntitled() ? fullpathTemp.c_str() : fullpath)) // Use temp only for "new #" due to they don't have the original physical existance on the hard drive
+			if (phextBackupReady)
+			{
+				// Write the assembled phext bytes directly (see above).
+				HANDLE hFile = ::CreateFileW(buffer->isUntitled() ? fullpathTemp.c_str() : fullpath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+				bool isWrittenSuccessful = false;
+				if (hFile != INVALID_HANDLE_VALUE)
+				{
+					DWORD written = 0;
+					BOOL writeOk = ::WriteFile(hFile, phextBackupBytes.data(), static_cast<DWORD>(phextBackupBytes.size()), &written, NULL);
+					::CloseHandle(hFile);
+					isWrittenSuccessful = (writeOk && written == phextBackupBytes.size());
+				}
+				if (isWrittenSuccessful) // backup file has been saved
+				{
+					if (buffer->isUntitled()) // "new #" file is saved successfully, then we replace its only physical existence by its temp
+					{
+						if (doesFileExist(fullpath))
+							::ReplaceFile(fullpath, fullpathTemp.c_str(), nullptr, REPLACEFILE_IGNORE_MERGE_ERRORS | REPLACEFILE_IGNORE_ACL_ERRORS, 0, 0);
+						else
+							::MoveFileEx(fullpathTemp.c_str(), fullpath, MOVEFILE_REPLACE_EXISTING);
+					}
+					buffer->setTabCreatedTimeStringFromBakFile();
+					buffer->setModifiedStatus(false);
+					result = true;	//all done
+				}
+			}
+			else if (UnicodeConvertor.openFile (buffer->isUntitled() ? fullpathTemp.c_str() : fullpath)) // Use temp only for "new #" due to they don't have the original physical existance on the hard drive
 			{
 				size_t lengthDoc = _pNotepadPlus->_pEditView->getCurrentDocLen();
 				char* buf = (char*)_pNotepadPlus->_pEditView->execute(SCI_GETCHARACTERPOINTER);	//to get characters directly from Scintilla buffer
@@ -1636,6 +1646,70 @@ SavingStatus FileManager::saveBuffer(BufferID id, const wchar_t* filename, bool 
 
 	size_t lengthDoc = _pscratchTilla->getCurrentDocLen();
 	char* buf = (char*)_pscratchTilla->execute(SCI_GETCHARACTERPOINTER);	//to get characters directly from Scintilla buffer
+
+	// Phext (fork patch): a phext buffer's Scintilla text is a projection.
+	// Parse it back, splice it into the PhextDocument, and write the
+	// assembled phext bytes directly — the encoding/EOL conversion path
+	// below would destroy phext break bytes. A blocked splice (corrupted
+	// separator, move out of the subspace) writes NOTHING and reports.
+	// "Save a Copy" (isCopy) keeps upstream behaviour for the copy only.
+	// This branch does not take the UAC-elevation path: if the target
+	// cannot be opened for writing, the save fails closed.
+	if (buffer->isPhext() && !isCopy)
+	{
+		std::string editedText(buf, lengthDoc);
+		std::string outBytes;
+		std::string error;
+		if (!buffer->phextState()->saveFromProjectionText(editedText, outBytes, error))
+		{
+			_pscratchTilla->execute(SCI_SETDOCPOINTER, 0, _scratchDocDefault);
+			std::wstring werr(error.begin(), error.end());
+			::MessageBoxW(_pNotepadPlus->_pEditView->getHSelf(),
+				(L"Phext save blocked: " + werr + L"\n\nThe file on disk was not changed.").c_str(),
+				L"Phext", MB_OK | MB_ICONWARNING | MB_APPLMODAL);
+			return SavingStatus::SaveWritingFailed;
+		}
+
+		HANDLE hFile = ::CreateFileW(fullpath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+		if (hFile == INVALID_HANDLE_VALUE)
+		{
+			_pscratchTilla->execute(SCI_SETDOCPOINTER, 0, _scratchDocDefault);
+			return SavingStatus::SaveOpenFailed;
+		}
+		DWORD written = 0;
+		BOOL writeOk = ::WriteFile(hFile, outBytes.data(), static_cast<DWORD>(outBytes.size()), &written, NULL);
+		::CloseHandle(hFile);
+		if (!writeOk || written != outBytes.size())
+		{
+			_pscratchTilla->execute(SCI_SETDOCPOINTER, 0, _scratchDocDefault);
+			return SavingStatus::SaveWritingFailed;
+		}
+
+		if (isHiddenOrSys)
+			::SetFileAttributes(fullpath, attributes.dwFileAttributes);
+
+		// The post-save bookkeeping of the upstream tail below, mirrored
+		// (the language-from-content probe is skipped: a phext buffer's
+		// type comes from its extension, never from projection bytes).
+		buffer->setFileName(fullpath);
+		buffer->setDirty(false);
+		buffer->setUnsync(false);
+		buffer->setSavePointDirty(false);
+		buffer->setStatus(DOC_REGULAR);
+		buffer->checkFileState();
+
+		_pscratchTilla->execute(SCI_SETSAVEPOINT);
+		_pscratchTilla->execute(SCI_SETDOCPOINTER, 0, _scratchDocDefault);
+
+		wstring backupFilePath = buffer->getBackupFileName();
+		if (!backupFilePath.empty())
+		{
+			buffer->setBackupFileName(wstring());
+			::DeleteFile(backupFilePath.c_str());
+		}
+
+		return SavingStatus::SaveOK;
+	}
 
 	std::string fileContentSaveUAC;
 	bool uacSaveMode = false;
