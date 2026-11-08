@@ -1,0 +1,47 @@
+# Phext fork CI — focused signal for the emise/phext-subspace branch.
+# Upstream's CI_build.yml is unmodified and also runs; this workflow exists
+# so the phext core gets an MSVC compile+test receipt on every push, and the
+# app build result is attributable to the phext wiring alone.
+name: phext-build
+
+on:
+  push:
+    branches: [emise/phext-subspace]
+  workflow_dispatch:
+
+jobs:
+  core-msvc:
+    name: phext core tests (MSVC)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+      - name: Build core tests with cl
+        shell: cmd
+        working-directory: PowerEditor/src/phext/tests
+        run: cl /std:c++17 /EHsc /W3 /I.. test_phext.cpp ..\PhextDocument.cpp ..\SubspaceSpec.cpp ..\Projection.cpp /Fe:test_phext_msvc.exe
+      - name: Run core tests (synthetic suite)
+        shell: cmd
+        working-directory: PowerEditor/src/phext/tests
+        run: test_phext_msvc.exe
+
+  app-x64-release:
+    name: Notepad++ Release|x64 (MSVC)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: microsoft/setup-msbuild@v2
+      - name: Build notepadPlus.sln Release|x64
+        shell: pwsh
+        run: |
+          msbuild PowerEditor/visual.net/notepadPlus.sln /p:Configuration=Release /p:Platform=x64 /m /fl /flp:logfile=msbuild-app.log`;verbosity=normal
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Upload msbuild log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: msbuild-app-log
+          path: msbuild-app.log
+          if-no-files-found: ignore

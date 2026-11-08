@@ -28,6 +28,12 @@ standalone with g++ — see `tests/`.
 | `phext/PhextBufferGlue.h` | The thin Windows-side seam: extension-only `.phext` detection, per-buffer state (document + spec + projection), default-spec choice, status-bar coordinate lookup, and the save entry point. |
 | `phext/tests/test_phext.cpp` | Standalone acceptance tests (g++, no Windows deps): round-trips on real corpora, split/merge/delete, corruption blocking, moves, strided scatter, sparsity, offset map, perf timings. |
 
+## New files — CI
+
+| File | Why |
+|---|---|
+| `.github/workflows/phext-build.yml` | Fork-only CI for this branch: compiles and runs the phext core tests under MSVC (`cl /std:c++17`) and builds `notepadPlus.sln` Release\|x64, uploading the msbuild log on failure. Upstream's `CI_build.yml` is unmodified and also runs; this workflow gives the phext wiring its own attributable signal. Triggers on pushes to `emise/phext-subspace` and manually. |
+
 ## Modified files — the wiring (all Windows-only)
 
 | File | Change | Why |
