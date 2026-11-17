@@ -48,6 +48,7 @@
 #include "AboutDlg.h"
 #include "AutoCompletion.h"
 #include "Buffer.h"
+#include "phext/PhextFont.h"
 #include "Common.h"
 #include "ContextMenu.h"
 #include "CustomFileDialog.h"
@@ -4706,6 +4707,28 @@ void Notepad_plus::updateStatusBar()
 	statusbarLnColStr = stringReplace(statusbarLnColStr, L"$STR_REPLACE1$", lnStr);
 	statusbarLnColStr = stringReplace(statusbarLnColStr, L"$STR_REPLACE2$", colStr);
 	wstring statusbarLnColSelStr = statusbarLnColStr + L"    " + statusbarSelStr;
+
+	// Phext (fork patch): phext buffers render in Willbot Mono (Will's
+	// handwriting monospace, bundled under src/phext/fonts/). Applied once
+	// per switch into a phext buffer in a view; switching to an ordinary
+	// buffer re-applies the user's own styles through the normal path, so
+	// nothing is restored here. Fails soft when the font is unavailable
+	// (see phext/PhextFont.h).
+	{
+		static const ScintillaEditView* lastFontView = nullptr;
+		static Buffer* lastFontBuf = nullptr;
+		Buffer* curBufFont = _pEditView->getCurrentBuffer();
+		if (curBufFont != lastFontBuf || _pEditView != lastFontView)
+		{
+			lastFontBuf = curBufFont;
+			lastFontView = _pEditView;
+			if (curBufFont && curBufFont->isPhext() && phext::ensureWillbotMonoLoaded())
+			{
+				_pEditView->execute(SCI_STYLESETFONT, STYLE_DEFAULT, reinterpret_cast<LPARAM>(phext::willbotMonoFaceA()));
+				_pEditView->execute(SCI_STYLECLEARALL);
+			}
+		}
+	}
 
 	// Phext (fork patch): for phext buffers, prefix the caret section with
 	// the coordinate of the scroll under the caret, read from the
