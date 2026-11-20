@@ -4708,8 +4708,9 @@ void Notepad_plus::updateStatusBar()
 	statusbarLnColStr = stringReplace(statusbarLnColStr, L"$STR_REPLACE2$", colStr);
 	wstring statusbarLnColSelStr = statusbarLnColStr + L"    " + statusbarSelStr;
 
-	// Phext (fork patch): phext buffers render in Willbot Mono (Will's
-	// handwriting monospace, bundled under src/phext/fonts/). Applied once
+	// Phext (fork patch): phext buffers render in Emise (Will's
+	// handwriting redrawn as a designed monospace, the successor to
+	// Willbot Mono), bundled under src/phext/fonts/. Applied once
 	// per switch into a phext buffer in a view; switching to an ordinary
 	// buffer re-applies the user's own styles through the normal path, so
 	// nothing is restored here. Fails soft when the font is unavailable
@@ -4722,9 +4723,9 @@ void Notepad_plus::updateStatusBar()
 		{
 			lastFontBuf = curBufFont;
 			lastFontView = _pEditView;
-			if (curBufFont && curBufFont->isPhext() && phext::ensureWillbotMonoLoaded())
+			if (curBufFont && curBufFont->isPhext() && phext::ensureEmiseLoaded())
 			{
-				_pEditView->execute(SCI_STYLESETFONT, STYLE_DEFAULT, reinterpret_cast<LPARAM>(phext::willbotMonoFaceA()));
+				_pEditView->execute(SCI_STYLESETFONT, STYLE_DEFAULT, reinterpret_cast<LPARAM>(phext::emiseFaceA()));
 				_pEditView->execute(SCI_STYLECLEARALL);
 			}
 		}

@@ -17,8 +17,9 @@ keeps track of coordinates for you.
   Insert Scroll After, Delete Scroll, Repair Separators, View Raw Bytes,
   Navigator, File Info. *(Phase 1: File Info and Repair Separators work;
   the dialog commands announce themselves as phase 2 — see Status.)*
-- **Phext buffers render in Willbot Mono**, the monospace cut of Will's
-  handwriting font, when the bundled font (`PowerEditor/src/phext/fonts/`
+- **Phext buffers render in Emise**, Will's handwriting redrawn as a
+  designed monospace (the successor to Willbot Mono, 2026-11-19), when
+  the bundled font (`PowerEditor/src/phext/fonts/`
   beside the executable, or installed system-wide) is available; otherwise
   they keep your configured editor font.
 - **The status bar** shows the coordinate of the scroll under the caret

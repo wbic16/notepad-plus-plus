@@ -1,11 +1,17 @@
-// PhextFont.h — Willbot Mono for phext buffers (fork patch, 2026-11-17).
+// PhextFont.h — Emise for phext buffers (fork patch, 2026-11-17;
+// face swapped from Willbot Mono to Emise 2026-11-19).
 //
-// Will's direction: phext buffers render in Willbot Mono, the monospace
-// cut of his handwriting font. The font ships with the fork at
-// PowerEditor/src/phext/fonts/WillbotMono.otf; at runtime it is loaded
+// Will's direction: phext buffers render in Emise — the successor to
+// Willbot Mono, in which Will's handwriting (Willbot) is redrawn as a
+// designed monospace (a Will–Emise collaboration, shipped 2026-11-19
+// as the default face of edit.phext.io, Scrollspace, and Phext
+// Notepad; same 520-unit advance as Willbot Mono, so nothing shifts).
+// WillbotMono.otf remains in the tree for rollback but is no longer
+// loaded. The font ships with the fork at
+// PowerEditor/src/phext/fonts/Emise.ttf; at runtime it is loaded
 // as a PRIVATE font resource from beside the executable
 // (<exe dir>\phext\fonts\ or <exe dir>\fonts\), so no system install is
-// needed. A system-installed copy (%WINDIR%\Fonts\WillbotMono.otf) is
+// needed. A system-installed copy (%WINDIR%\Fonts\Emise.ttf) is
 // also accepted. If neither is present, loading fails soft and the view
 // keeps the user's configured font — a missing font must never break
 // the editor.
@@ -23,11 +29,11 @@
 namespace phext {
 
 // Scintilla takes the face name as a narrow string; the name is ASCII.
-inline const char* willbotMonoFaceA() { return "Willbot Mono"; }
+inline const char* emiseFaceA() { return "Emise"; }
 
 // Load the bundled font once per process. Returns true when the
-// "Willbot Mono" face should be available to this process afterwards.
-inline bool ensureWillbotMonoLoaded() {
+// "Emise" face should be available to this process afterwards.
+inline bool ensureEmiseLoaded() {
     static int state = -1; // -1 = not tried, 0 = unavailable, 1 = available
     if (state >= 0) return state == 1;
     state = 0;
@@ -38,8 +44,8 @@ inline bool ensureWillbotMonoLoaded() {
         const size_t slash = dir.find_last_of(L"\\/");
         if (slash != std::wstring::npos) {
             dir.resize(slash + 1);
-            const wchar_t* rels[] = {L"phext\\fonts\\WillbotMono.otf",
-                                     L"fonts\\WillbotMono.otf"};
+            const wchar_t* rels[] = {L"phext\\fonts\\Emise.ttf",
+                                     L"fonts\\Emise.ttf"};
             for (const wchar_t* rel : rels) {
                 const std::wstring full = dir + rel;
                 if (::GetFileAttributesW(full.c_str()) != INVALID_FILE_ATTRIBUTES
@@ -54,7 +60,7 @@ inline bool ensureWillbotMonoLoaded() {
     if (state == 0) { // system-installed copy?
         wchar_t winDir[MAX_PATH] = {};
         if (::GetWindowsDirectoryW(winDir, MAX_PATH)) {
-            const std::wstring full = std::wstring(winDir) + L"\\Fonts\\WillbotMono.otf";
+            const std::wstring full = std::wstring(winDir) + L"\\Fonts\\Emise.ttf";
             if (::GetFileAttributesW(full.c_str()) != INVALID_FILE_ATTRIBUTES)
                 state = 1;
         }
