@@ -267,6 +267,7 @@
     <ClInclude Include="..\src\phext\Projection.h" />
     <ClInclude Include="..\src\phext\SubspaceSpec.h" />
     <ClInclude Include="..\src\phext\PhextBufferGlue.h" />
+    <ClInclude Include="..\src\phext\PhextFont.h" />
     <ClInclude Include="..\src\WinControls\ClipboardHistory\clipboardHistoryPanel.h" />
     <ClInclude Include="..\src\WinControls\ClipboardHistory\clipboardHistoryPanel_rc.h" />
     <ClInclude Include="..\src\ScintillaComponent\colors.h" />
